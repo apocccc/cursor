@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 
   try {
     await resend.emails.send({
-      from: "ApocWire <noreply@apocwire.com>",
+      from: "ApocWire <onboarding@resend.dev>",
       to: email,
       subject: `[ApocWire] 認証コード: ${code}`,
       html: `

@@ -818,8 +818,43 @@
     //  REGISTER
     // ══════════════════════════════════════════════════
     let registerError = '';
+    let registerStep = 'form'; // 'form' | 'sent'
+    let registerSending = false;
+    let registeredEmail = '';
+
     function renderRegister() {
       if (currentUser) { setTimeout(() => navigate('dashboard'), 0); return '<div class="max-w-sm mx-auto px-4 py-20 text-center text-mute text-[13px]">リダイレクト中...</div>'; }
+
+      // Step 2: confirmation email sent
+      if (registerStep === 'sent') {
+        return `
+          <div class="max-w-sm mx-auto px-4 py-12">
+            <div class="text-center mb-6">
+              <div class="flex items-center justify-center gap-1.5 mb-6">
+                <span class="bg-brand text-white text-[11px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+                <span class="text-[16px] font-bold">ApocWire</span>
+              </div>
+              <div class="w-14 h-14 mx-auto mb-4 bg-brand/10 rounded-full flex items-center justify-center">
+                <svg class="w-7 h-7 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              </div>
+              <h1 class="font-bold text-[18px] mb-2">確認メールを送信しました</h1>
+              <p class="text-[13px] text-sub mb-1"><span class="font-medium text-ink">${registeredEmail}</span></p>
+              <p class="text-[13px] text-sub">に確認メールを送信しました。</p>
+              <p class="text-[13px] text-sub mt-1">メール内のリンクをクリックして登録を完了してください。</p>
+            </div>
+            <div class="bg-white border border-line rounded-sm p-5 space-y-3">
+              <p class="text-[12px] text-mute">メールが届かない場合:</p>
+              <ul class="text-[12px] text-sub space-y-1.5 list-disc list-inside">
+                <li>迷惑メールフォルダを確認してください</li>
+                <li>メールアドレスが正しいか確認してください</li>
+              </ul>
+              <button onclick="registerStep='form'; registerError=''; render();" class="w-full border border-line py-2 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors mt-2">メールアドレスを変更して再送信</button>
+            </div>
+            <p class="text-[12px] text-mute text-center mt-5">すでにアカウントをお持ちの方は <a href="#" onclick="event.preventDefault();navigate('login')" class="text-brand hover:underline">ログイン</a></p>
+          </div>`;
+      }
+
+      // Step 1: registration form
       return `
         <div class="max-w-sm mx-auto px-4 py-12">
           <div class="text-center mb-8">
@@ -834,15 +869,17 @@
           <div class="bg-white border border-line rounded-sm p-6">
             <div class="space-y-4">
               <div class="grid grid-cols-2 gap-3">
-                <div><label class="block text-[12px] text-sub mb-1.5">姓</label><input id="reg-last" type="text" placeholder="山田" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
-                <div><label class="block text-[12px] text-sub mb-1.5">名</label><input id="reg-first" type="text" placeholder="太郎" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+                <div><label class="block text-[12px] text-sub mb-1.5">姓 <span class="text-brand">*</span></label><input id="reg-last" type="text" placeholder="山田" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+                <div><label class="block text-[12px] text-sub mb-1.5">名 <span class="text-brand">*</span></label><input id="reg-first" type="text" placeholder="太郎" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
               </div>
               <div><label class="block text-[12px] text-sub mb-1.5">企業名</label><input id="reg-company" type="text" placeholder="株式会社〇〇" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
-              <div><label class="block text-[12px] text-sub mb-1.5">メールアドレス</label><input id="reg-email" type="email" placeholder="mail@example.com" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
-              <div><label class="block text-[12px] text-sub mb-1.5">パスワード</label><input id="reg-password" type="password" placeholder="8文字以上" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
-              <div><label class="block text-[12px] text-sub mb-1.5">パスワード（確認）</label><input id="reg-password2" type="password" placeholder="もう一度入力" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              <div><label class="block text-[12px] text-sub mb-1.5">メールアドレス <span class="text-brand">*</span></label><input id="reg-email" type="email" placeholder="mail@example.com" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              <div><label class="block text-[12px] text-sub mb-1.5">パスワード <span class="text-brand">*</span></label><input id="reg-password" type="password" placeholder="8文字以上" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              <div><label class="block text-[12px] text-sub mb-1.5">パスワード（確認） <span class="text-brand">*</span></label><input id="reg-password2" type="password" placeholder="もう一度入力" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
               <label class="flex items-start gap-2 text-[12px] text-sub cursor-pointer"><input id="reg-agree" type="checkbox" class="mt-0.5 rounded-sm"><span><a href="#" class="text-brand hover:underline">利用規約</a>と<a href="#" class="text-brand hover:underline">プライバシーポリシー</a>に同意する</span></label>
-              <button onclick="doRegister()" class="w-full bg-brand text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors mt-1">会員登録する</button>
+              <button onclick="doRegister()" class="w-full bg-brand text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors mt-1 disabled:opacity-50 disabled:cursor-not-allowed" ${registerSending ? 'disabled' : ''}>
+                ${registerSending ? '<span class="spinner mr-2"></span>送信中...' : '確認メールを送信して登録'}
+              </button>
             </div>
             <div class="relative my-5"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-line"></div></div><div class="relative flex justify-center"><span class="bg-white px-3 text-[11px] text-mute">または</span></div></div>
             <button class="w-full border border-line py-2.5 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors flex items-center justify-center gap-2">
@@ -854,7 +891,7 @@
         </div>`;
     }
 
-    function doRegister() {
+    async function doRegister() {
       const last = document.getElementById('reg-last').value.trim();
       const first = document.getElementById('reg-first').value.trim();
       const company = document.getElementById('reg-company').value.trim();
@@ -864,18 +901,36 @@
       const agree = document.getElementById('reg-agree').checked;
 
       if (!last || !first) { registerError = '姓名を入力してください'; render(); return; }
-      if (!email) { registerError = 'メールアドレスを入力してください'; render(); return; }
-      if (USERS.find(u => u.email === email)) { registerError = 'このメールアドレスは既に登録されています'; render(); return; }
+      if (!email || !email.includes('@')) { registerError = '有効なメールアドレスを入力してください'; render(); return; }
       if (pw.length < 8) { registerError = 'パスワードは8文字以上で入力してください'; render(); return; }
       if (pw !== pw2) { registerError = 'パスワードが一致しません'; render(); return; }
       if (!agree) { registerError = '利用規約に同意してください'; render(); return; }
 
-      const newUser = { id: 'u' + (USERS.length + 1), email, password: pw, role: 'client', name: last + ' ' + first, company: company || null, translatorId: null };
-      USERS.push(newUser);
       registerError = '';
-      currentUser = newUser;
-      sessionStorage.setItem('aw_user', JSON.stringify(newUser));
-      navigate('dashboard');
+      registerSending = true;
+      render();
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, name: last + ' ' + first, company: company || undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '登録に失敗しました');
+
+        // Also store locally so password login works after email verification
+        if (!USERS.find(u => u.email === email)) {
+          USERS.push({ id: 'u' + (USERS.length + 1), email, password: pw, role: 'client', name: last + ' ' + first, company: company || null, translatorId: null });
+        }
+
+        registeredEmail = email;
+        registerStep = 'sent';
+      } catch (e) {
+        registerError = e.message || '登録に失敗しました';
+      }
+      registerSending = false;
+      render();
     }
 
     // ══════════════════════════════════════════════════
