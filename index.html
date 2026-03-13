@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApocWire - 海外プレスリリース配信</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#e8380d',
+            'brand-dark': '#c42f0a',
+            ink: '#222',
+            sub: '#666',
+            mute: '#999',
+            line: '#e0e0e0',
+            bg: '#f5f5f3',
+            surface: '#fff',
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans JP', system-ui, sans-serif; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    input:focus, select:focus, textarea:focus { outline: none; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #e0e0e0; border-top-color: #e8380d; border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-active { color: #222; border-bottom: 2px solid #e8380d; }
+    .tab-inactive { color: #999; border-bottom: 2px solid transparent; }
+    .region-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 7px; border: 1px solid #e0e0e0; border-radius: 2px; color: #666; }
+  </style>
+</head>
+<body class="bg-bg text-ink min-h-screen flex flex-col text-[14px]">
+
+  <!-- Header public -->
+  <header id="header-public" class="bg-white border-b border-line sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="#" onclick="navigate('home')" class="flex items-center gap-1.5">
+        <span class="bg-brand text-white text-[11px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+        <span class="text-[15px] font-bold tracking-tight">ApocWire</span>
+        <span class="text-[10px] text-mute ml-1 hidden sm:inline">Global Press Release</span>
+      </a>
+      <nav id="nav-public" class="hidden md:flex items-center gap-5 text-[13px]">
+        <!-- populated by updatePublicNav() -->
+      </nav>
+      <button onclick="toggleMobileMenu()" class="md:hidden p-1 text-sub">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-line px-4 py-3 space-y-1 text-[13px] bg-white">
+      <!-- populated by updatePublicNav() -->
+    </div>
+  </header>
+
+  <!-- Header dash -->
+  <header id="header-dash" class="bg-ink sticky top-0 z-50 hidden">
+    <div class="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="#" onclick="navigate('dashboard')" class="flex items-center gap-1.5">
+          <span class="bg-brand text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+          <span class="text-[14px] font-bold text-white/90 tracking-tight">管理画面</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-4 text-[12px]">
+          <a href="#" onclick="navigate('dashboard')" class="text-white/50 hover:text-white">ダッシュボード</a>
+          <a href="#" onclick="navigate('dash-new')" class="text-white/50 hover:text-white">新規作成</a>
+          <a href="#" onclick="navigate('dash-analytics')" class="text-white/50 hover:text-white">分析</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="dash-user-name" class="text-[11px] text-white/40"></span>
+        <a href="#" onclick="navigate('home')" class="text-[11px] text-white/40 hover:text-white/70">公開サイトへ</a>
+        <button onclick="doLogout()" class="text-[12px] text-white/50 hover:text-white border border-white/20 px-2.5 py-1 rounded-sm">ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Header translator -->
+  <header id="header-trans" class="bg-[#1a3a4a] sticky top-0 z-50 hidden">
+    <div class="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="#" onclick="navigate('trans-dashboard')" class="flex items-center gap-1.5">
+          <span class="bg-brand text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+          <span class="text-[14px] font-bold text-white/90 tracking-tight">翻訳者パネル</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-4 text-[12px]">
+          <a href="#" onclick="navigate('trans-dashboard')" class="text-white/50 hover:text-white">案件一覧</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="trans-user-name" class="text-[11px] text-white/40"></span>
+        <button onclick="doLogout()" class="text-[12px] text-white/50 hover:text-white border border-white/20 px-2.5 py-1 rounded-sm">ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Header admin (APOC) -->
+  <header id="header-admin" class="bg-[#1a1a2e] sticky top-0 z-50 hidden">
+    <div class="max-w-6xl mx-auto px-4 h-12 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="#" onclick="navigate('admin-dashboard')" class="flex items-center gap-1.5">
+          <span class="bg-brand text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+          <span class="text-[14px] font-bold text-white/90 tracking-tight">APOC管理</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-4 text-[12px]">
+          <a href="#" onclick="navigate('admin-dashboard')" class="text-white/50 hover:text-white">ダッシュボード</a>
+          <a href="#" onclick="navigate('admin-orders')" class="text-white/50 hover:text-white">翻訳案件</a>
+          <a href="#" onclick="navigate('admin-translators')" class="text-white/50 hover:text-white">翻訳者管理</a>
+          <a href="#" onclick="navigate('admin-clients')" class="text-white/50 hover:text-white">事業者管理</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="admin-user-name" class="text-[11px] text-white/40"></span>
+        <button onclick="doLogout()" class="text-[12px] text-white/50 hover:text-white border border-white/20 px-2.5 py-1 rounded-sm">ログアウト</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="flex-1"></main>
+
+  <footer id="footer" class="border-t border-line mt-auto bg-white">
+    <div class="max-w-5xl mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-1.5 mb-2">
+            <span class="bg-brand text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+            <span class="text-[13px] font-bold">ApocWire</span>
+          </div>
+          <p class="text-[12px] text-mute">日本企業の海外プレスリリース配信プラットフォーム</p>
+        </div>
+        <div class="flex gap-10 text-[12px]">
+          <div class="space-y-1.5">
+            <a href="#" onclick="navigate('home')" class="block text-sub hover:text-ink">リリース一覧</a>
+            <a href="#" onclick="navigate('categories')" class="block text-sub hover:text-ink">カテゴリ</a>
+          </div>
+          <div class="space-y-1.5">
+            <a href="#" class="block text-sub hover:text-ink">利用規約</a>
+            <a href="#" class="block text-sub hover:text-ink">プライバシーポリシー</a>
+          </div>
+        </div>
+      </div>
+      <p class="text-[11px] text-mute mt-6">&copy; 2026 ApocWire Inc.</p>
+    </div>
+  </footer>
+
+  <script src="lib/mock-data.js"></script>
+  <script>
+    // ══════════════════════════════════════════════════
+    //  USER ACCOUNTS & AUTH
+    // ══════════════════════════════════════════════════
+    const USERS = [
+      { id: 'u1', email: 'toyota@example.com', password: 'toyota123', role: 'client', name: '鈴木 一郎', company: 'トヨタ自動車株式会社', translatorId: null },
+      { id: 'u2', email: 'sony@example.com', password: 'sony123', role: 'client', name: '佐藤 花子', company: '株式会社ソニーグループ', translatorId: null },
+      { id: 'u3', email: 'tanaka@example.com', password: 'tanaka123', role: 'translator', name: '田中 美咲', company: null, translatorId: 't1' },
+      { id: 'u4', email: 'smith@example.com', password: 'smith123', role: 'translator', name: 'John Smith', company: null, translatorId: 't2' },
+      { id: 'u5', email: 'li@example.com', password: 'li123', role: 'translator', name: '李 雪華', company: null, translatorId: 't3' },
+      { id: 'u6', email: 'muller@example.com', password: 'muller123', role: 'translator', name: 'Anna Müller', company: null, translatorId: 't4' },
+      { id: 'u7', email: 'kim@example.com', password: 'kim123', role: 'translator', name: '김 수진', company: null, translatorId: 't5' },
+      { id: 'u8', email: 'admin@apoc.co.jp', password: 'apoc123', role: 'admin', name: '山田 太郎', company: '株式会社APOC', translatorId: null },
+    ];
+
+    let currentUser = JSON.parse(sessionStorage.getItem('aw_user') || 'null');
+    let loginError = '';
+
+    function doLogin(email, password) {
+      const user = USERS.find(u => u.email === email && u.password === password);
+      if (!user) { loginError = 'メールアドレスまたはパスワードが正しくありません'; render(); return; }
+      currentUser = user;
+      sessionStorage.setItem('aw_user', JSON.stringify(user));
+      loginError = '';
+      if (user.role === 'translator') navigate('trans-dashboard');
+      else if (user.role === 'admin') navigate('admin-dashboard');
+      else navigate('dashboard');
+    }
+
+    function doLogout() {
+      currentUser = null;
+      sessionStorage.removeItem('aw_user');
+      navigate('home');
+    }
+
+    function requireAuth(roles) {
+      if (!currentUser) { navigate('login'); return false; }
+      if (roles && !roles.includes(currentUser.role)) { navigate('login'); return false; }
+      return true;
+    }
+
+    let currentPage = currentUser ? (currentUser.role === 'translator' ? 'trans-dashboard' : currentUser.role === 'admin' ? 'admin-dashboard' : 'home') : 'home';
+    let currentParams = {};
+    let searchQuery = '';
+    let selectedCategory = '';
+    let myReleases = [
+      { title: '新型燃料電池車「MIRAI NEXT」を2026年秋に全世界同時発売', summary: '次世代FCスタック搭載で航続距離1,000km超を実現。北米・欧州・アジアで同時ローンチ。', status: 'published', date: '2026/03/12', langs: ['日本語', 'English', '中文'], regions: ['na', 'eu', 'asia'], categoryId: 'manufacturing',
+        body: '■ 概要\n新型MIRAI NEXTは、第3世代FCスタックを搭載し航続距離1,000kmを実現。\n\n■ 主な特徴\n・航続距離：1,050km（WLTCモード）\n・水素充填時間：約3分\n・新開発の軽量カーボンタンク採用\n・OTAアップデート対応',
+        videos: [
+          { platform: 'youtube', title: 'MIRAI NEXT ワールドプレミア｜トヨタニュースルーム', url: 'https://youtube.com/watch?v=example1', views: 284000, date: '2026/03/12' },
+          { platform: 'youtube', title: 'MIRAI NEXT - The Future of Hydrogen (EN)', url: 'https://youtube.com/watch?v=example1en', views: 156000, date: '2026/03/12' },
+          { platform: 'tiktok', title: 'MIRAI NEXT 60秒でわかる新型FCV #トヨタ #水素', url: 'https://tiktok.com/@toyotajp/video/example1', views: 520000, date: '2026/03/12' },
+        ]},
+      { title: 'トヨタとBMW、全固体電池の共同量産に向けた合弁会社を設立', summary: '2028年の量産開始を目指し、総額5,000億円を投資。EV向け全固体電池の世界標準化を推進。', status: 'published', date: '2026/03/10', langs: ['日本語', 'English', 'Deutsch'], regions: ['na', 'eu'], categoryId: 'manufacturing',
+        body: '■ 合弁会社概要\n・社名：Toyota-BMW Solid State Battery GmbH\n・所在地：ドイツ・ミュンヘン\n・出資比率：トヨタ60% / BMW 40%\n・投資総額：5,000億円\n\n■ 技術目標\n・エネルギー密度：現行リチウムイオン比2.5倍\n・充電時間：10分で80%充電\n・2028年に量産開始予定',
+        videos: [
+          { platform: 'youtube', title: 'トヨタ×BMW 全固体電池プロジェクト発表会見', url: 'https://youtube.com/watch?v=example2', views: 98000, date: '2026/03/10' },
+          { platform: 'instagram', title: '全固体電池の仕組みを解説 #EV #固体電池', url: 'https://instagram.com/reel/example2', views: 340000, date: '2026/03/10' },
+        ]},
+      { title: '自動運転レベル4対応「Toyota Chauffeur」が米カリフォルニア州で公道走行許可を取得', summary: '一般道を含む自動運転走行が可能に。2026年内にサンフランシスコでライドシェアサービスを開始予定。', status: 'published', date: '2026/03/08', langs: ['日本語', 'English'], regions: ['na'], categoryId: 'it',
+        body: '■ 許可内容\n・走行エリア：サンフランシスコ市内全域\n・時間帯制限なし（24時間走行可能）\n・乗客を乗せた商用運行を許可\n\n■ サービス計画\n2026年Q4にライドシェアサービスを開始予定。',
+        videos: [
+          { platform: 'youtube', title: 'Toyota Chauffeur: Level 4 Autonomous Driving in SF', url: 'https://youtube.com/watch?v=example3', views: 430000, date: '2026/03/08' },
+          { platform: 'twitter', title: 'サンフランシスコ公道走行テスト映像を公開', url: 'https://x.com/ToyotaMotorCorp/status/example3', views: 89000, date: '2026/03/08' },
+        ]},
+      { title: 'トヨタ、東南アジア5カ国でEV充電インフラ整備プロジェクトを始動', summary: 'タイ・インドネシア・ベトナム・フィリピン・マレーシアに計10,000基の急速充電器を設置。', status: 'published', date: '2026/03/06', langs: ['日本語', 'English'], regions: ['asia'], categoryId: 'manufacturing',
+        body: '■ プロジェクト概要\n・対象国：タイ、インドネシア、ベトナム、フィリピン、マレーシア\n・設置数：計10,000基\n・投資額：約800億円\n・完了目標：2028年末',
+        videos: [
+          { platform: 'youtube', title: 'Toyota ASEAN EV Charging Network プロジェクト紹介', url: 'https://youtube.com/watch?v=example4', views: 45000, date: '2026/03/06' },
+        ]},
+      { title: 'Woven City、第一期居住者500名の入居を2026年夏に開始', summary: '静岡県裾野市のスマートシティ実証都市で、自動運転・ロボティクス・AIの統合実験を本格化。', status: 'published', date: '2026/03/04', langs: ['日本語', 'English'], regions: ['na', 'eu', 'asia'], categoryId: 'it',
+        body: '■ Woven City 第一期概要\n・居住者：約500名（トヨタ社員・家族・研究者）\n・住居数：約150戸\n・実証テーマ：自動運転、ロボティクス、AI、スマートホーム、水素エネルギー',
+        videos: [
+          { platform: 'youtube', title: 'Woven City 最新映像 - 未来の街が動き出す', url: 'https://youtube.com/watch?v=example5', views: 1200000, date: '2026/03/04' },
+          { platform: 'tiktok', title: '未来都市Woven Cityに住んでみた #WovenCity #トヨタ', url: 'https://tiktok.com/@toyotajp/video/example5', views: 2800000, date: '2026/03/05' },
+          { platform: 'instagram', title: 'Woven City 空撮ツアー', url: 'https://instagram.com/reel/example5', views: 670000, date: '2026/03/04' },
+        ]},
+      { title: 'トヨタ、水素エンジン搭載の商用トラックを欧州市場に初投入', summary: '水素燃焼エンジンを搭載した大型トラックをドイツ・オランダで先行販売開始。', status: 'published', date: '2026/03/02', langs: ['日本語', 'English', 'Deutsch'], regions: ['eu'], categoryId: 'manufacturing',
+        body: '■ 製品概要\n・車名：Toyota H2 Truck\n・エンジン：3.0L 直6 水素燃焼エンジン\n・航続距離：約600km\n・積載量：最大25トン',
+        videos: [
+          { platform: 'youtube', title: 'Toyota H2 Truck - Hydrogen Powered Heavy Duty (DE)', url: 'https://youtube.com/watch?v=example6', views: 78000, date: '2026/03/02' },
+        ]},
+      { title: '月面探査車「LUNAR CRUISER」の最終試作機が完成、JAXAと共同で月面走行試験へ', summary: '2028年の月面ミッションに向け、与圧型月面探査車の最終プロトタイプが完成。', status: 'published', date: '2026/02/28', langs: ['日本語', 'English'], regions: ['na', 'eu', 'asia'], categoryId: 'it',
+        body: '■ LUNAR CRUISER概要\n・全長：6.0m × 全幅：5.2m × 全高：3.8m\n・乗員：2名（最大4名）\n・航続距離：10,000km以上\n・燃料電池 + 太陽光発電のハイブリッドシステム',
+        videos: [
+          { platform: 'youtube', title: 'LUNAR CRUISER 最終試作機完成｜JAXA×トヨタ記者会見', url: 'https://youtube.com/watch?v=example7', views: 890000, date: '2026/02/28' },
+          { platform: 'youtube', title: 'Inside the LUNAR CRUISER - Full Tour (EN)', url: 'https://youtube.com/watch?v=example7en', views: 2100000, date: '2026/03/01' },
+          { platform: 'tiktok', title: '月面を走るトヨタ車!? #LUNARCRUISER #宇宙', url: 'https://tiktok.com/@toyotajp/video/example7', views: 5400000, date: '2026/02/28' },
+          { platform: 'twitter', title: 'LUNAR CRUISER 試作機お披露目ダイジェスト', url: 'https://x.com/ToyotaMotorCorp/status/example7', views: 320000, date: '2026/02/28' },
+        ]},
+      { title: 'トヨタ・リサーチ・インスティテュート、大規模言語モデルを活用した車両設計AIを発表', summary: '自然言語で車両デザイン要件を入力するとAIが3Dモデルを自動生成。開発期間を60%短縮。', status: 'published', date: '2026/02/25', langs: ['日本語', 'English'], regions: ['na'], categoryId: 'it',
+        body: '■ 技術概要\n・自然言語による車両デザイン指示\n・AIが3Dモデルを10分以内に自動生成\n・空力シミュレーションも同時実行\n・開発期間を従来比60%短縮',
+        videos: [
+          { platform: 'youtube', title: 'TRI Design AI デモンストレーション', url: 'https://youtube.com/watch?v=example8', views: 210000, date: '2026/02/25' },
+        ]},
+      { title: 'トヨタファイナンシャルサービス、グリーンボンド2,000億円を発行', summary: 'EV・水素インフラ投資に充当。ESG格付けでAAA評価を維持。', status: 'draft', date: '2026/03/13', langs: ['日本語', 'English'], regions: ['na', 'eu'], categoryId: 'finance',
+        body: '■ 発行概要\n・発行額：2,000億円\n・年限：5年 / 10年の2本立て\n・用途：EV開発、水素ステーション整備、再生可能エネルギー設備',
+        videos: []},
+      { title: 'CES 2027出展内容を先行公開：空飛ぶクルマ「Toyota VTOL」のコンセプトモデル', summary: '電動垂直離着陸機の実機サイズモデルを初公開予定。都市間エアモビリティの実現に向けた構想を発表。', status: 'draft', date: '2026/03/13', langs: ['日本語', 'English', '中文'], regions: ['na', 'asia', 'cn'], categoryId: 'it',
+        body: '■ コンセプト概要\n・乗員：4名（パイロット含む）\n・航続距離：約150km\n・最高速度：250km/h\n・全電動 eVTOL',
+        videos: []},
+    ];
+
+    const langCode = (c) => ({ ja: '日本語', en: 'English', zh: '中文', ko: '한국어', de: 'Deutsch', fr: 'Français', es: 'Español' }[c] || c);
+    function getCategoryById(id) { return CATEGORIES.find(c => c.id === id); }
+    function getCompanyById(id) { return COMPANIES.find(c => c.id === id); }
+    function getLangById(id) { return LANGS.find(l => l.id === id); }
+    function fmtDate(d) { const [y,m,day]=d.split('-'); return `${y}/${m}/${day}`; }
+
+    function catLabel(categoryId, clickable = true) {
+      const cat = getCategoryById(categoryId);
+      if (!cat) return '';
+      if (clickable) return `<span onclick="event.stopPropagation(); navigate('home',{category:'${cat.id}'});" class="text-brand text-[12px] font-medium cursor-pointer hover:underline">${cat.name}</span>`;
+      return `<span class="text-brand text-[12px] font-medium">${cat.name}</span>`;
+    }
+
+    function regionChips(regionIds) {
+      if (!regionIds || regionIds.length === 0) return '';
+      return regionIds.map(id => {
+        const r = REGIONS.find(x => x.id === id);
+        return r ? `<span class="region-chip">${r.flag} ${r.name}</span>` : '';
+      }).join(' ');
+    }
+
+    function coIcon(company, size = 'w-7 h-7 text-[10px]') {
+      return `<div class="${size} bg-ink/8 text-ink/50 flex items-center justify-center font-bold flex-shrink-0 rounded-sm">${company.logo}</div>`;
+    }
+
+    function navigate(page, params = {}) {
+      currentPage = page;
+      currentParams = params;
+      if (page === 'home' && params.category) selectedCategory = params.category;
+      else if (page === 'home') selectedCategory = '';
+      render();
+      window.scrollTo({ top: 0 });
+      document.getElementById('mobile-menu')?.classList.add('hidden');
+    }
+
+    function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
+
+    function showHeader(type) {
+      document.getElementById('header-public').classList.toggle('hidden', type !== 'public');
+      document.getElementById('header-dash').classList.toggle('hidden', type !== 'dash');
+      document.getElementById('header-trans').classList.toggle('hidden', type !== 'trans');
+      document.getElementById('header-admin').classList.toggle('hidden', type !== 'admin');
+      document.getElementById('footer').classList.toggle('hidden', type !== 'public');
+      updatePublicNav();
+      // update user name displays
+      if (currentUser) {
+        const dn = document.getElementById('dash-user-name');
+        const tn = document.getElementById('trans-user-name');
+        const an = document.getElementById('admin-user-name');
+        if (dn) dn.textContent = currentUser.company ? `${currentUser.name}（${currentUser.company}）` : currentUser.name;
+        if (tn) {
+          const tr = TRANSLATORS.find(t => t.id === currentUser.translatorId);
+          tn.textContent = tr ? `${currentUser.name}（${tr.langs.map(langCode).join(' / ')}）` : currentUser.name;
+        }
+        if (an) an.textContent = `${currentUser.name}（${currentUser.company || 'APOC'}）`;
+      }
+    }
+
+    function updatePublicNav() {
+      const nav = document.getElementById('nav-public');
+      const mobile = document.getElementById('mobile-menu');
+      if (!nav) return;
+      if (currentUser) {
+        const dashLink = currentUser.role === 'translator' ? 'trans-dashboard' : currentUser.role === 'admin' ? 'admin-dashboard' : 'dashboard';
+        const dashLabel = currentUser.role === 'translator' ? '翻訳パネル' : currentUser.role === 'admin' ? 'APOC管理' : '管理画面';
+        nav.innerHTML = `
+          <a href="#" onclick="navigate('home')" class="text-sub hover:text-ink">リリース一覧</a>
+          <a href="#" onclick="navigate('categories')" class="text-sub hover:text-ink">カテゴリ</a>
+          <span class="w-px h-4 bg-line"></span>
+          <span class="text-[12px] text-sub">${currentUser.name}</span>
+          <a href="#" onclick="navigate('${dashLink}')" class="bg-ink text-white px-3.5 py-1.5 rounded-sm text-[12px] font-medium hover:bg-ink/80">${dashLabel}</a>
+          <button onclick="doLogout()" class="text-sub hover:text-ink text-[12px]">ログアウト</button>
+        `;
+        if (mobile) mobile.innerHTML = `
+          <a href="#" onclick="navigate('home')" class="block py-1.5 text-sub">リリース一覧</a>
+          <a href="#" onclick="navigate('categories')" class="block py-1.5 text-sub">カテゴリ</a>
+          <a href="#" onclick="navigate('${dashLink}')" class="block py-1.5 text-sub">${dashLabel}</a>
+          <div class="border-t border-line my-1"></div>
+          <span class="block py-1.5 text-[12px] text-mute">${currentUser.name}（${currentUser.email}）</span>
+          <button onclick="doLogout()" class="block py-1.5 text-brand font-medium">ログアウト</button>
+        `;
+      } else {
+        nav.innerHTML = `
+          <a href="#" onclick="navigate('home')" class="text-sub hover:text-ink">リリース一覧</a>
+          <a href="#" onclick="navigate('categories')" class="text-sub hover:text-ink">カテゴリ</a>
+          <span class="w-px h-4 bg-line"></span>
+          <a href="#" onclick="navigate('login')" class="text-sub hover:text-ink">ログイン</a>
+          <a href="#" onclick="navigate('register')" class="bg-ink text-white px-3.5 py-1.5 rounded-sm text-[12px] font-medium hover:bg-ink/80">無料会員登録</a>
+        `;
+        if (mobile) mobile.innerHTML = `
+          <a href="#" onclick="navigate('home')" class="block py-1.5 text-sub">リリース一覧</a>
+          <a href="#" onclick="navigate('categories')" class="block py-1.5 text-sub">カテゴリ</a>
+          <a href="#" onclick="navigate('login')" class="block py-1.5 text-sub">ログイン</a>
+          <a href="#" onclick="navigate('register')" class="block py-1.5 text-brand font-medium">無料会員登録</a>
+        `;
+      }
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      const dashPages = ['dashboard', 'dash-new', 'dash-analytics', 'dash-detail'];
+      const transPages = ['trans-dashboard', 'trans-work'];
+      const adminPages = ['admin-dashboard', 'admin-orders', 'admin-translators', 'admin-clients', 'admin-order-detail'];
+
+      // Route guards — redirect to login if not authenticated or wrong role
+      if (dashPages.includes(currentPage) && !requireAuth(['client'])) return;
+      if (transPages.includes(currentPage) && !requireAuth(['translator'])) return;
+      if (adminPages.includes(currentPage) && !requireAuth(['admin'])) return;
+
+      let headerType = 'public';
+      if (dashPages.includes(currentPage)) headerType = 'dash';
+      else if (transPages.includes(currentPage)) headerType = 'trans';
+      else if (adminPages.includes(currentPage)) headerType = 'admin';
+      showHeader(headerType);
+      switch (currentPage) {
+        case 'home': app.innerHTML = renderHome(); break;
+        case 'press': app.innerHTML = renderPressDetail(); break;
+        case 'company': app.innerHTML = renderCompany(); break;
+        case 'categories': app.innerHTML = renderCategories(); break;
+        case 'login': app.innerHTML = renderLogin(); break;
+        case 'register': app.innerHTML = renderRegister(); break;
+        case 'dashboard': app.innerHTML = renderDashboard(); break;
+        case 'dash-new': app.innerHTML = renderDashNew(); break;
+        case 'dash-analytics': app.innerHTML = renderDashAnalytics(); initCharts(); break;
+        case 'dash-detail': app.innerHTML = renderDashDetail(); break;
+        case 'trans-dashboard': app.innerHTML = renderTransDashboard(); break;
+        case 'trans-work': app.innerHTML = renderTransWork(); break;
+        case 'admin-dashboard': app.innerHTML = renderAdminDashboard(); break;
+        case 'admin-orders': app.innerHTML = renderAdminOrders(); break;
+        case 'admin-translators': app.innerHTML = renderAdminTranslators(); break;
+        case 'admin-clients': app.innerHTML = renderAdminClients(); break;
+        case 'admin-order-detail': app.innerHTML = renderAdminOrderDetail(); break;
+        default: app.innerHTML = renderHome();
+      }
+    }
+
+    // ══════════════════════════════════════════════════
+    //  HOME
+    // ══════════════════════════════════════════════════
+    function renderHome() {
+      let filtered = [...PRESS_RELEASES];
+      if (selectedCategory) filtered = filtered.filter(p => p.categoryId === selectedCategory);
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(p => p.title.toLowerCase().includes(q) || p.titleEn.toLowerCase().includes(q) || p.summary.toLowerCase().includes(q) || getCompanyById(p.companyId)?.name.toLowerCase().includes(q));
+      }
+      const showHero = !selectedCategory && !searchQuery;
+
+      let featured = '';
+      let rest = filtered;
+      if (showHero && filtered.length >= 2) {
+        const [a,b] = filtered; rest = filtered.slice(2);
+        const coA = getCompanyById(a.companyId), coB = getCompanyById(b.companyId);
+        featured = `
+          <div class="max-w-5xl mx-auto px-4 pt-6 pb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div class="md:col-span-2 cursor-pointer group" onclick="navigate('press',{id:'${a.id}'})">
+                <div class="bg-ink/5 h-48 md:h-56 rounded-sm mb-3 flex items-center justify-center">
+                  <span class="text-[11px] text-ink/15 tracking-widest uppercase">Press Release</span>
+                </div>
+                <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                  ${catLabel(a.categoryId)}
+                  <span class="text-mute text-[12px]">${fmtDate(a.publishedAt)}</span>
+                  <span class="text-[11px] text-ink/25">|</span>
+                  ${regionChips(a.regions)}
+                </div>
+                <h2 class="font-bold text-[18px] leading-snug mb-1 group-hover:text-brand transition-colors">${a.title}</h2>
+                <p class="text-[12px] text-mute mb-1.5 italic">${a.titleEn}</p>
+                <p class="text-sub text-[13px] line-clamp-2 mb-2">${a.summary}</p>
+                <span class="text-[12px] text-mute">${coA.name}</span>
+              </div>
+              <div class="cursor-pointer group" onclick="navigate('press',{id:'${b.id}'})">
+                <div class="bg-ink/5 h-32 md:h-56 rounded-sm mb-3 flex items-center justify-center">
+                  <span class="text-[11px] text-ink/15 tracking-widest uppercase">Press Release</span>
+                </div>
+                <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                  ${catLabel(b.categoryId)}
+                  <span class="text-mute text-[12px]">${fmtDate(b.publishedAt)}</span>
+                </div>
+                <h3 class="font-bold text-[15px] leading-snug mb-1 group-hover:text-brand transition-colors line-clamp-2">${b.title}</h3>
+                <p class="text-[11px] text-mute italic line-clamp-2">${b.titleEn}</p>
+                <span class="text-[12px] text-mute mt-1 inline-block">${coB.name}</span>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      const catName = selectedCategory ? getCategoryById(selectedCategory)?.name : '';
+      let heading = '';
+      if (selectedCategory) heading = `<a href="#" onclick="navigate('home')" class="text-[12px] text-mute hover:text-ink">&larr; すべて</a><h2 class="font-bold text-[17px] mt-1 mb-4">${catName}</h2>`;
+      else if (searchQuery) heading = `<h2 class="font-bold text-[17px] mb-4">「${searchQuery}」の検索結果 <span class="text-mute font-normal text-[13px]">${filtered.length}件</span></h2>`;
+      else heading = `<h2 class="font-bold text-[15px] mb-3">新着リリース</h2>`;
+
+      const rows = rest.map(pr => {
+        const co = getCompanyById(pr.companyId);
+        return `
+          <a href="#" onclick="event.preventDefault();navigate('press',{id:'${pr.id}'})" class="block group py-3.5 border-b border-line/60 last:border-0">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                  ${catLabel(pr.categoryId, false)}
+                  <span class="text-[12px] text-mute">${fmtDate(pr.publishedAt)}</span>
+                  <span class="text-ink/15 text-[11px]">|</span>
+                  ${regionChips(pr.regions)}
+                </div>
+                <h3 class="font-medium text-[14px] leading-snug group-hover:text-brand transition-colors">${pr.title}</h3>
+                <p class="text-[11px] text-mute italic mt-0.5">${pr.titleEn}</p>
+                <span class="text-[11px] text-mute mt-1 inline-block">${co.name}</span>
+              </div>
+            </div>
+          </a>`;
+      }).join('');
+
+      const noResults = filtered.length === 0 ? `<div class="text-center py-16"><p class="text-mute text-[13px]">該当するプレスリリースがありません</p><button onclick="searchQuery='';selectedCategory='';navigate('home');" class="text-brand text-[12px] mt-2 hover:underline">すべて表示</button></div>` : '';
+
+      const searchSection = `
+        <div class="flex flex-col md:flex-row gap-3 mb-6">
+          <div class="relative flex-1">
+            <svg class="w-4 h-4 text-mute absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" placeholder="キーワードで検索（日本語 / English）" value="${searchQuery}"
+                   onkeydown="if(event.key==='Enter'){searchQuery=this.value;navigate('home');}"
+                   class="w-full pl-8 pr-3 py-2 border border-line rounded-sm text-[13px] bg-white focus:border-ink/40 placeholder:text-ink/25">
+          </div>
+          <div class="flex gap-1.5 flex-wrap">
+            <button onclick="selectedCategory='';searchQuery='';navigate('home');" class="px-2.5 py-1.5 text-[12px] rounded-sm border transition-colors ${!selectedCategory ? 'bg-ink text-white border-ink' : 'border-line text-sub hover:border-ink/30 bg-white'}">すべて</button>
+            ${CATEGORIES.map(c => `<button onclick="selectedCategory='${c.id}';navigate('home',{category:'${c.id}'});" class="px-2.5 py-1.5 text-[12px] rounded-sm border transition-colors ${selectedCategory===c.id ? 'bg-ink text-white border-ink' : 'border-line text-sub hover:border-ink/30 bg-white'}">${c.name}</button>`).join('')}
+          </div>
+        </div>`;
+
+      return `${featured}<section class="max-w-5xl mx-auto px-4 py-6">${searchSection}${heading}${rows}${noResults}</section>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  PRESS DETAIL (with JA/EN tabs)
+    // ══════════════════════════════════════════════════
+    function renderPressDetail() {
+      const pr = PRESS_RELEASES.find(p => p.id === currentParams.id);
+      if (!pr) return '<div class="max-w-3xl mx-auto px-4 py-20 text-center text-mute">記事が見つかりません</div>';
+      const co = getCompanyById(pr.companyId);
+      const related = PRESS_RELEASES.filter(p => p.id !== pr.id && (p.categoryId === pr.categoryId || p.companyId === pr.companyId)).slice(0, 4);
+
+      function formatBody(text) {
+        return text.split('\n').map(line => {
+          if (line.startsWith('■')) return `<h3 class="font-bold text-[14px] text-ink mt-6 mb-1.5">${line}</h3>`;
+          if (line.startsWith('・')) return `<p class="text-sub pl-3 text-[13px] leading-relaxed">${line}</p>`;
+          if (line.match(/^\d+\./)) return `<p class="text-sub pl-3 text-[13px] leading-relaxed">${line}</p>`;
+          if (line.trim() === '') return '<div class="h-2"></div>';
+          return `<p class="text-sub text-[13px] leading-[1.85]">${line}</p>`;
+        }).join('');
+      }
+
+      return `
+        <div class="max-w-3xl mx-auto px-4 py-6">
+          <a href="#" onclick="event.preventDefault();navigate('home')" class="text-[12px] text-mute hover:text-ink inline-block mb-5">&larr; 一覧に戻る</a>
+          <article class="bg-white border border-line rounded-sm overflow-hidden">
+            <div class="p-5 md:p-8">
+              <div class="flex items-center gap-2 mb-3 flex-wrap">
+                ${catLabel(pr.categoryId)}
+                <span class="text-[12px] text-mute">${fmtDate(pr.publishedAt)}</span>
+                <span class="text-ink/15 text-[11px]">|</span>
+                ${regionChips(pr.regions)}
+              </div>
+
+              <!-- Language tabs -->
+              <div class="flex gap-4 border-b border-line mb-5" id="detail-tabs">
+                <button onclick="switchDetailLang('ja')" class="pb-2 text-[13px] font-medium tab-active" data-lang="ja">日本語</button>
+                <button onclick="switchDetailLang('en')" class="pb-2 text-[13px] font-medium tab-inactive" data-lang="en">English</button>
+              </div>
+
+              <div id="detail-ja">
+                <h1 class="font-bold text-[20px] md:text-[22px] leading-snug mb-3">${pr.title}</h1>
+                <p class="text-sub text-[14px] leading-relaxed mb-6 pb-5 border-b border-line">${pr.summary}</p>
+                <div>${formatBody(pr.body)}</div>
+              </div>
+              <div id="detail-en" class="hidden">
+                <h1 class="font-bold text-[20px] md:text-[22px] leading-snug mb-3">${pr.titleEn}</h1>
+                <p class="text-sub text-[14px] leading-relaxed mb-6 pb-5 border-b border-line">${pr.summaryEn}</p>
+                <div>${formatBody(pr.bodyEn)}</div>
+              </div>
+
+              <div class="flex items-center gap-2 mt-8 pt-5 border-t border-line">
+                <span class="text-[11px] text-mute mr-1">シェア</span>
+                <button class="w-7 h-7 border border-line rounded-sm flex items-center justify-center hover:border-ink/30"><svg class="w-3 h-3 text-sub" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></button>
+                <button class="w-7 h-7 border border-line rounded-sm flex items-center justify-center hover:border-ink/30"><svg class="w-3 h-3 text-sub" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></button>
+                <button onclick="navigator.clipboard?.writeText(location.href)" class="w-7 h-7 border border-line rounded-sm flex items-center justify-center hover:border-ink/30"><svg class="w-3 h-3 text-sub" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.54a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg></button>
+              </div>
+            </div>
+            <div class="border-t border-line p-5 md:px-8 bg-bg/50 cursor-pointer group" onclick="navigate('company',{id:'${co.id}'})">
+              <div class="flex items-start gap-3">
+                ${coIcon(co, 'w-10 h-10 text-[12px]')}
+                <div>
+                  <p class="text-[11px] text-mute mb-0.5">配信企業</p>
+                  <p class="font-medium text-[14px] group-hover:text-brand transition-colors">${co.name} <span class="text-mute font-normal text-[12px]">${co.nameEn}</span></p>
+                  <p class="text-[12px] text-mute mt-0.5">${co.industry} / ${co.founded}創業</p>
+                </div>
+              </div>
+            </div>
+          </article>
+          ${related.length > 0 ? `<div class="mt-8"><h2 class="font-bold text-[14px] mb-3">関連リリース</h2>${related.map(r => `<a href="#" onclick="event.preventDefault();navigate('press',{id:'${r.id}'})" class="block group py-3 border-b border-line/60 last:border-0"><div class="flex items-center gap-2 mb-0.5">${catLabel(r.categoryId, false)}<span class="text-[11px] text-mute">${fmtDate(r.publishedAt)}</span></div><p class="text-[13px] font-medium group-hover:text-brand transition-colors">${r.title}</p></a>`).join('')}</div>` : ''}
+        </div>`;
+    }
+
+    function switchDetailLang(lang) {
+      document.getElementById('detail-ja').classList.toggle('hidden', lang !== 'ja');
+      document.getElementById('detail-en').classList.toggle('hidden', lang !== 'en');
+      document.querySelectorAll('#detail-tabs button').forEach(btn => {
+        btn.className = `pb-2 text-[13px] font-medium ${btn.dataset.lang === lang ? 'tab-active' : 'tab-inactive'}`;
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    //  COMPANY
+    // ══════════════════════════════════════════════════
+    function renderCompany() {
+      const co = getCompanyById(currentParams.id);
+      if (!co) return '<div class="max-w-3xl mx-auto px-4 py-20 text-center text-mute">企業が見つかりません</div>';
+      const releases = PRESS_RELEASES.filter(p => p.companyId === co.id);
+      return `
+        <div class="max-w-3xl mx-auto px-4 py-6">
+          <a href="#" onclick="event.preventDefault();navigate('home')" class="text-[12px] text-mute hover:text-ink inline-block mb-5">&larr; 一覧</a>
+          <div class="bg-white border border-line rounded-sm p-5 md:p-8 mb-6">
+            <div class="flex items-start gap-4 mb-5">
+              ${coIcon(co, 'w-14 h-14 text-[16px]')}
+              <div>
+                <h1 class="font-bold text-[18px]">${co.name}</h1>
+                <p class="text-[12px] text-mute">${co.nameEn}</p>
+                <p class="text-[12px] text-mute mt-0.5">${co.industry} / ${co.founded}創業 / ${co.employees}</p>
+              </div>
+            </div>
+            <p class="text-[13px] text-sub leading-relaxed mb-5">${co.description}</p>
+            <div class="flex gap-6">
+              <div><p class="text-[11px] text-mute">リリース数</p><p class="font-bold text-[18px]">${releases.length}</p></div>
+              <div><p class="text-[11px] text-mute">最終更新</p><p class="font-bold text-[18px]">${releases.length>0?fmtDate(releases[0].publishedAt):'-'}</p></div>
+            </div>
+          </div>
+          <h2 class="font-bold text-[14px] mb-3">プレスリリース</h2>
+          ${releases.map(pr => `<a href="#" onclick="event.preventDefault();navigate('press',{id:'${pr.id}'})" class="block group py-3.5 border-b border-line/60 last:border-0"><div class="flex items-center gap-2 mb-1">${catLabel(pr.categoryId,false)}<span class="text-[12px] text-mute">${fmtDate(pr.publishedAt)}</span><span class="text-ink/15 text-[11px]">|</span>${regionChips(pr.regions)}</div><h3 class="font-medium text-[14px] leading-snug group-hover:text-brand transition-colors">${pr.title}</h3><p class="text-[11px] text-mute italic mt-0.5">${pr.titleEn}</p></a>`).join('')}
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  CATEGORIES
+    // ══════════════════════════════════════════════════
+    function renderCategories() {
+      return `
+        <div class="max-w-3xl mx-auto px-4 py-6">
+          <h1 class="font-bold text-[17px] mb-5">カテゴリ</h1>
+          <div class="bg-white border border-line rounded-sm divide-y divide-line">
+            ${CATEGORIES.map(cat => {
+              const count = PRESS_RELEASES.filter(p => p.categoryId === cat.id).length;
+              return `<a href="#" onclick="event.preventDefault();navigate('home',{category:'${cat.id}'})" class="block group px-5 py-4 hover:bg-bg/50 transition-colors"><div class="flex items-center justify-between"><p class="font-medium text-[14px] group-hover:text-brand transition-colors">${cat.name}</p><span class="text-[18px] font-bold text-ink/20">${count}</span></div></a>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  LOGIN
+    // ══════════════════════════════════════════════════
+    function renderLogin() {
+      // already logged in? redirect
+      if (currentUser) {
+        const dest = currentUser.role === 'translator' ? 'trans-dashboard' : currentUser.role === 'admin' ? 'admin-dashboard' : 'dashboard';
+        setTimeout(() => navigate(dest), 0);
+        return '<div class="max-w-sm mx-auto px-4 py-20 text-center text-mute text-[13px]">リダイレクト中...</div>';
+      }
+
+      const accountRows = [
+        { label: '事業者', icon: '🏢', accounts: USERS.filter(u => u.role === 'client') },
+        { label: '翻訳者', icon: '🌐', accounts: USERS.filter(u => u.role === 'translator') },
+        { label: 'APOC管理', icon: '🔒', accounts: USERS.filter(u => u.role === 'admin') },
+      ];
+
+      return `
+        <div class="max-w-2xl mx-auto px-4 py-12">
+          <div class="text-center mb-8">
+            <div class="flex items-center justify-center gap-1.5 mb-4">
+              <span class="bg-brand text-white text-[11px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+              <span class="text-[16px] font-bold">ApocWire</span>
+            </div>
+            <h1 class="font-bold text-[17px]">ログイン</h1>
+          </div>
+
+          <div class="max-w-sm mx-auto">
+            ${loginError ? `<div class="bg-red-50 border border-red-200 text-red-700 text-[12px] px-4 py-2.5 rounded-sm mb-4">${loginError}</div>` : ''}
+            <div class="bg-white border border-line rounded-sm p-6">
+              <div class="space-y-4">
+                <div><label class="block text-[12px] text-sub mb-1.5">メールアドレス</label><input id="login-email" type="email" placeholder="mail@example.com" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20" onkeydown="if(event.key==='Enter')document.getElementById('login-btn').click()"></div>
+                <div><label class="block text-[12px] text-sub mb-1.5">パスワード</label><input id="login-password" type="password" placeholder="パスワード" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20" onkeydown="if(event.key==='Enter')document.getElementById('login-btn').click()"></div>
+                <div class="flex items-center justify-between text-[12px]">
+                  <label class="flex items-center gap-1.5 text-sub cursor-pointer"><input type="checkbox" class="rounded-sm"> ログイン状態を保持</label>
+                  <a href="#" class="text-brand hover:underline">パスワードを忘れた方</a>
+                </div>
+                <button id="login-btn" onclick="doLogin(document.getElementById('login-email').value, document.getElementById('login-password').value)" class="w-full bg-ink text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-ink/80 transition-colors mt-2">ログイン</button>
+              </div>
+              <div class="relative my-5"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-line"></div></div><div class="relative flex justify-center"><span class="bg-white px-3 text-[11px] text-mute">または</span></div></div>
+              <button class="w-full border border-line py-2.5 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                Googleでログイン
+              </button>
+            </div>
+
+            <p class="text-[12px] text-mute text-center mt-5">アカウントをお持ちでない方は <a href="#" onclick="event.preventDefault();navigate('register')" class="text-brand hover:underline">新規会員登録</a></p>
+
+            <!-- Test accounts -->
+            <div class="mt-8 border-t border-line pt-6">
+              <p class="text-[11px] text-mute text-center mb-3">テストアカウント（クリックで自動入力）</p>
+              <div class="space-y-3">
+                ${accountRows.map(group => `
+                  <div>
+                    <p class="text-[10px] text-mute font-medium mb-1.5">${group.icon} ${group.label}</p>
+                    <div class="space-y-1">
+                      ${group.accounts.map(u => `
+                        <button onclick="document.getElementById('login-email').value='${u.email}'; document.getElementById('login-password').value='${u.password}';" class="w-full text-left px-3 py-2 bg-white border border-line rounded-sm hover:border-ink/30 transition-colors group">
+                          <div class="flex items-center justify-between">
+                            <div>
+                              <span class="text-[12px] font-medium group-hover:text-brand transition-colors">${u.name}</span>
+                              ${u.company ? `<span class="text-[11px] text-mute ml-1.5">${u.company}</span>` : ''}
+                            </div>
+                            <span class="text-[10px] text-mute">${u.email}</span>
+                          </div>
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  REGISTER
+    // ══════════════════════════════════════════════════
+    let registerError = '';
+    function renderRegister() {
+      if (currentUser) { setTimeout(() => navigate('dashboard'), 0); return '<div class="max-w-sm mx-auto px-4 py-20 text-center text-mute text-[13px]">リダイレクト中...</div>'; }
+      return `
+        <div class="max-w-sm mx-auto px-4 py-12">
+          <div class="text-center mb-8">
+            <div class="flex items-center justify-center gap-1.5 mb-4">
+              <span class="bg-brand text-white text-[11px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+              <span class="text-[16px] font-bold">ApocWire</span>
+            </div>
+            <h1 class="font-bold text-[17px]">無料会員登録</h1>
+            <p class="text-[12px] text-mute mt-1">海外プレスリリース配信を今すぐ始められます</p>
+          </div>
+          ${registerError ? `<div class="bg-red-50 border border-red-200 text-red-700 text-[12px] px-4 py-2.5 rounded-sm mb-4">${registerError}</div>` : ''}
+          <div class="bg-white border border-line rounded-sm p-6">
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="block text-[12px] text-sub mb-1.5">姓</label><input id="reg-last" type="text" placeholder="山田" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+                <div><label class="block text-[12px] text-sub mb-1.5">名</label><input id="reg-first" type="text" placeholder="太郎" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              </div>
+              <div><label class="block text-[12px] text-sub mb-1.5">企業名</label><input id="reg-company" type="text" placeholder="株式会社〇〇" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              <div><label class="block text-[12px] text-sub mb-1.5">メールアドレス</label><input id="reg-email" type="email" placeholder="mail@example.com" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              <div><label class="block text-[12px] text-sub mb-1.5">パスワード</label><input id="reg-password" type="password" placeholder="8文字以上" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              <div><label class="block text-[12px] text-sub mb-1.5">パスワード（確認）</label><input id="reg-password2" type="password" placeholder="もう一度入力" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+              <label class="flex items-start gap-2 text-[12px] text-sub cursor-pointer"><input id="reg-agree" type="checkbox" class="mt-0.5 rounded-sm"><span><a href="#" class="text-brand hover:underline">利用規約</a>と<a href="#" class="text-brand hover:underline">プライバシーポリシー</a>に同意する</span></label>
+              <button onclick="doRegister()" class="w-full bg-brand text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors mt-1">会員登録する</button>
+            </div>
+            <div class="relative my-5"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-line"></div></div><div class="relative flex justify-center"><span class="bg-white px-3 text-[11px] text-mute">または</span></div></div>
+            <button class="w-full border border-line py-2.5 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Googleで登録
+            </button>
+          </div>
+          <p class="text-[12px] text-mute text-center mt-5">すでにアカウントをお持ちの方は <a href="#" onclick="event.preventDefault();navigate('login')" class="text-brand hover:underline">ログイン</a></p>
+        </div>`;
+    }
+
+    function doRegister() {
+      const last = document.getElementById('reg-last').value.trim();
+      const first = document.getElementById('reg-first').value.trim();
+      const company = document.getElementById('reg-company').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pw = document.getElementById('reg-password').value;
+      const pw2 = document.getElementById('reg-password2').value;
+      const agree = document.getElementById('reg-agree').checked;
+
+      if (!last || !first) { registerError = '姓名を入力してください'; render(); return; }
+      if (!email) { registerError = 'メールアドレスを入力してください'; render(); return; }
+      if (USERS.find(u => u.email === email)) { registerError = 'このメールアドレスは既に登録されています'; render(); return; }
+      if (pw.length < 8) { registerError = 'パスワードは8文字以上で入力してください'; render(); return; }
+      if (pw !== pw2) { registerError = 'パスワードが一致しません'; render(); return; }
+      if (!agree) { registerError = '利用規約に同意してください'; render(); return; }
+
+      const newUser = { id: 'u' + (USERS.length + 1), email, password: pw, role: 'client', name: last + ' ' + first, company: company || null, translatorId: null };
+      USERS.push(newUser);
+      registerError = '';
+      currentUser = newUser;
+      sessionStorage.setItem('aw_user', JSON.stringify(newUser));
+      navigate('dashboard');
+    }
+
+    // ══════════════════════════════════════════════════
+    //  DASHBOARD
+    // ══════════════════════════════════════════════════
+    function renderDashboard() {
+      const published = myReleases.filter(r => r.status === 'published');
+      const drafts = myReleases.filter(r => r.status === 'draft');
+      const releaseRow = (r, i) => `
+        <div onclick="navigate('dash-detail', {idx: ${i}})" class="flex items-center gap-4 py-3 border-b border-line/60 last:border-0 cursor-pointer hover:bg-bg/60 transition-colors -mx-5 px-5">
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-[13px] truncate">${r.title || '（無題）'}</p>
+            <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+              <span class="text-[11px] ${r.status === 'published' ? 'text-green-600' : 'text-mute'}">${r.status === 'published' ? '公開中' : '下書き'}</span>
+              <span class="text-[11px] text-mute">${r.date}</span>
+              ${r.langs ? r.langs.map(l => `<span class="text-[10px] px-1.5 py-0.5 bg-ink/5 text-sub">${l}</span>`).join('') : ''}
+              ${r.regions ? r.regions.map(id => { const reg = REGIONS.find(x=>x.id===id); return reg ? `<span class="text-[10px] text-mute">${reg.flag}</span>` : ''; }).join('') : ''}
+            </div>
+          </div>
+          <button onclick="event.stopPropagation(); deleteRelease(${i})" class="text-[11px] text-mute hover:text-red-500 transition-colors flex-shrink-0">削除</button>
+        </div>`;
+
+      return `
+        <div class="max-w-3xl mx-auto px-4 py-6">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="font-bold text-[17px]">ダッシュボード</h1>
+            <button onclick="navigate('dash-new')" class="bg-brand text-white px-3.5 py-1.5 rounded-sm text-[12px] font-medium hover:bg-brand-dark transition-colors">+ 新規作成</button>
+          </div>
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">公開中</p><p class="font-bold text-[22px] mt-1">${published.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">下書き</p><p class="font-bold text-[22px] mt-1">${drafts.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">配信地域</p><p class="font-bold text-[22px] mt-1">${new Set(myReleases.flatMap(r => r.regions || [])).size}</p></div>
+          </div>
+          <div class="bg-white border border-line rounded-sm">
+            <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+              <h2 class="font-medium text-[13px]">プレスリリース一覧</h2>
+              <span class="text-[11px] text-mute">${myReleases.length}件</span>
+            </div>
+            <div class="px-5">${myReleases.length > 0 ? myReleases.map((r,i) => releaseRow(r,i)).join('') : ''}</div>
+            ${myReleases.length === 0 ? `<div class="text-center py-16 border-t border-dashed border-line"><p class="text-mute text-[13px] mb-3">まだプレスリリースがありません</p><button onclick="navigate('dash-new')" class="bg-brand text-white px-4 py-2 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors">最初のリリースを作成</button></div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function deleteRelease(idx) { myReleases.splice(idx, 1); render(); }
+
+    // ══════════════════════════════════════════════════
+    //  DASH DETAIL
+    // ══════════════════════════════════════════════════
+    function platformIcon(p) {
+      const icons = {
+        youtube: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2 31.9 31.9 0 000 12a31.9 31.9 0 00.5 5.8 3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1A31.9 31.9 0 0024 12a31.9 31.9 0 00-.5-5.8zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>',
+        tiktok: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.72a8.18 8.18 0 004.76 1.52V6.79a4.85 4.85 0 01-1-.1z"/></svg>',
+        instagram: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85C2.38 3.92 3.9 2.38 7.15 2.23 8.42 2.17 8.8 2.16 12 2.16zM12 0C8.74 0 8.33.01 7.05.07 2.7.27.27 2.7.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.36 2.62 6.78 6.98 6.98C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c4.35-.2 6.78-2.62 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.35-2.62-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zM12 16a4 4 0 110-8 4 4 0 010 8zm6.41-11.85a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg>',
+        twitter: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      };
+      return icons[p] || '';
+    }
+    function platformColor(p) {
+      return { youtube: 'text-red-600', tiktok: 'text-ink', instagram: 'text-pink-600', twitter: 'text-ink' }[p] || 'text-sub';
+    }
+    function platformName(p) {
+      return { youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', twitter: 'X (Twitter)' }[p] || p;
+    }
+    function fmtViews(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K';
+      return n.toString();
+    }
+
+    function renderDashDetail() {
+      const idx = currentParams.idx;
+      const r = myReleases[idx];
+      if (!r) return `<div class="max-w-3xl mx-auto px-4 py-12 text-center"><p class="text-mute">リリースが見つかりません</p><button onclick="navigate('dashboard')" class="mt-4 text-brand text-[13px] hover:underline">← ダッシュボードへ戻る</button></div>`;
+
+      const cat = getCategoryById(r.categoryId);
+      const videoRows = (r.videos || []).map((v, vi) => `
+        <div class="flex items-start gap-3 py-3 border-b border-line/60 last:border-0">
+          <div class="${platformColor(v.platform)} flex-shrink-0 mt-0.5">${platformIcon(v.platform)}</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[13px] font-medium truncate">${v.title}</p>
+            <div class="flex items-center gap-3 mt-1 text-[11px] text-mute">
+              <span>${platformName(v.platform)}</span>
+              <span>${fmtViews(v.views)} views</span>
+              <span>${v.date}</span>
+            </div>
+          </div>
+          <button onclick="removeVideo(${idx}, ${vi})" class="text-[11px] text-mute hover:text-red-500 transition-colors flex-shrink-0 mt-1">削除</button>
+        </div>
+      `).join('');
+
+      return `
+        <div class="max-w-3xl mx-auto px-4 py-6">
+          <button onclick="navigate('dashboard')" class="text-[12px] text-mute hover:text-ink transition-colors mb-4 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            ダッシュボードへ戻る
+          </button>
+
+          <!-- Header -->
+          <div class="flex items-start justify-between gap-4 mb-6">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-[11px] px-2 py-0.5 font-medium ${r.status === 'published' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-ink/5 text-mute border border-line'}">${r.status === 'published' ? '公開中' : '下書き'}</span>
+                ${cat ? `<span class="text-[11px] text-brand">${cat.name}</span>` : ''}
+                <span class="text-[11px] text-mute">${r.date}</span>
+              </div>
+              <h1 class="text-[18px] font-bold leading-snug">${r.title}</h1>
+            </div>
+            <button onclick="togglePublish(${idx})" class="flex-shrink-0 text-[12px] px-3 py-1.5 rounded-sm border font-medium transition-colors ${r.status === 'published' ? 'border-line text-sub hover:bg-ink/5' : 'border-brand bg-brand text-white hover:bg-brand-dark'}">${r.status === 'published' ? '非公開にする' : '公開する'}</button>
+          </div>
+
+          <!-- Content -->
+          <div class="bg-white border border-line rounded-sm mb-4">
+            <div class="px-5 py-3 border-b border-line"><h2 class="font-medium text-[13px]">コンテンツ</h2></div>
+            <div class="p-5 space-y-4">
+              <div>
+                <label class="text-[11px] text-mute block mb-1">概要</label>
+                <p class="text-[13px] text-sub">${r.summary}</p>
+              </div>
+              <div>
+                <label class="text-[11px] text-mute block mb-1">本文</label>
+                <pre class="text-[13px] text-sub whitespace-pre-wrap font-[inherit] leading-relaxed bg-bg/50 p-3 border border-line/60">${r.body || '（本文なし）'}</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribution -->
+          <div class="bg-white border border-line rounded-sm mb-4">
+            <div class="px-5 py-3 border-b border-line"><h2 class="font-medium text-[13px]">配信設定</h2></div>
+            <div class="p-5 space-y-3">
+              <div>
+                <label class="text-[11px] text-mute block mb-1.5">翻訳言語</label>
+                <div class="flex flex-wrap gap-1.5">${(r.langs || []).map(l => `<span class="text-[11px] px-2 py-0.5 bg-ink/5 text-sub border border-line/60">${l}</span>`).join('')}</div>
+              </div>
+              <div>
+                <label class="text-[11px] text-mute block mb-1.5">配信地域</label>
+                <div class="flex flex-wrap gap-1.5">${(r.regions || []).map(id => { const reg = REGIONS.find(x=>x.id===id); return reg ? `<span class="region-chip">${reg.flag} ${reg.name}</span>` : ''; }).join('')}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SNS Videos -->
+          <div class="bg-white border border-line rounded-sm mb-4">
+            <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+              <h2 class="font-medium text-[13px]">SNS動画連携</h2>
+              <span class="text-[11px] text-mute">${(r.videos || []).length}件</span>
+            </div>
+            ${(r.videos || []).length > 0 ? `<div class="px-5">${videoRows}</div>` : `<div class="px-5 py-8 text-center text-mute text-[13px]">動画がまだ連携されていません</div>`}
+            <div class="px-5 py-4 border-t border-line bg-bg/30">
+              <p class="text-[11px] text-mute mb-2">新しい動画を追加</p>
+              <div class="flex gap-2">
+                <select id="video-platform" class="text-[12px] border border-line rounded-sm px-2 py-1.5 bg-white">
+                  <option value="youtube">YouTube</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="twitter">X (Twitter)</option>
+                </select>
+                <input id="video-title" type="text" placeholder="動画タイトル" class="flex-1 text-[12px] border border-line rounded-sm px-2.5 py-1.5 bg-white min-w-0">
+                <input id="video-url" type="text" placeholder="URL" class="w-48 text-[12px] border border-line rounded-sm px-2.5 py-1.5 bg-white">
+                <button onclick="addVideo(${idx})" class="bg-ink text-white text-[12px] px-3 py-1.5 rounded-sm font-medium hover:bg-ink/80 transition-colors flex-shrink-0">追加</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total video stats -->
+          ${(r.videos || []).length > 0 ? `
+          <div class="bg-white border border-line rounded-sm mb-4">
+            <div class="px-5 py-3 border-b border-line"><h2 class="font-medium text-[13px]">動画パフォーマンス</h2></div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-5">
+              <div><p class="text-[11px] text-mute">総再生数</p><p class="font-bold text-[18px] mt-0.5">${fmtViews(r.videos.reduce((s,v)=>s+v.views,0))}</p></div>
+              <div><p class="text-[11px] text-mute">動画数</p><p class="font-bold text-[18px] mt-0.5">${r.videos.length}</p></div>
+              <div><p class="text-[11px] text-mute">プラットフォーム</p><p class="font-bold text-[18px] mt-0.5">${new Set(r.videos.map(v=>v.platform)).size}</p></div>
+              <div><p class="text-[11px] text-mute">平均再生数</p><p class="font-bold text-[18px] mt-0.5">${fmtViews(Math.round(r.videos.reduce((s,v)=>s+v.views,0)/r.videos.length))}</p></div>
+            </div>
+          </div>` : ''}
+
+          <!-- Danger zone -->
+          <div class="border border-red-200 rounded-sm">
+            <div class="px-5 py-3 flex items-center justify-between">
+              <div>
+                <p class="text-[13px] font-medium text-red-600">このリリースを削除</p>
+                <p class="text-[11px] text-mute mt-0.5">削除すると元に戻せません</p>
+              </div>
+              <button onclick="if(confirm('本当に削除しますか？')){deleteRelease(${idx}); navigate('dashboard');}" class="text-[12px] text-red-500 border border-red-300 px-3 py-1.5 rounded-sm hover:bg-red-50 transition-colors">削除</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function togglePublish(idx) {
+      myReleases[idx].status = myReleases[idx].status === 'published' ? 'draft' : 'published';
+      render();
+    }
+
+    function addVideo(idx) {
+      const platform = document.getElementById('video-platform').value;
+      const title = document.getElementById('video-title').value.trim();
+      const url = document.getElementById('video-url').value.trim();
+      if (!title || !url) return;
+      if (!myReleases[idx].videos) myReleases[idx].videos = [];
+      myReleases[idx].videos.push({ platform, title, url, views: 0, date: new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit'}).replace(/-/g, '/') });
+      render();
+    }
+
+    function removeVideo(releaseIdx, videoIdx) {
+      myReleases[releaseIdx].videos.splice(videoIdx, 1);
+      render();
+    }
+
+    // ══════════════════════════════════════════════════
+    //  DASH NEW (with translation)
+    // ══════════════════════════════════════════════════
+    let translatedTexts = {};
+    let translatingLang = '';
+
+    function renderDashNew() {
+      return `
+        <div class="max-w-5xl mx-auto px-4 py-6">
+          <a href="#" onclick="event.preventDefault();navigate('dashboard')" class="text-[12px] text-mute hover:text-ink inline-block mb-4">&larr; ダッシュボード</a>
+          <h1 class="font-bold text-[17px] mb-5">プレスリリースを作成</h1>
+
+          <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <!-- Form (3 cols) -->
+            <div class="lg:col-span-3 space-y-5">
+              <!-- Original text -->
+              <div class="bg-white border border-line rounded-sm p-5">
+                <h2 class="font-medium text-[13px] mb-4 flex items-center gap-2">
+                  <span class="w-5 h-5 bg-ink text-white text-[10px] flex items-center justify-center rounded-sm font-bold">1</span>
+                  日本語で作成
+                </h2>
+                <div class="space-y-4">
+                  <div><label class="block text-[12px] text-sub mb-1.5">タイトル <span class="text-brand">*</span></label><input id="form-title" type="text" placeholder="〇〇株式会社、新サービス「△△」を正式リリース" oninput="updateDashPreview()" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+                  <div><label class="block text-[12px] text-sub mb-1.5">サマリー <span class="text-brand">*</span></label><input id="form-summary" type="text" placeholder="プレスリリースの概要を一文で" oninput="updateDashPreview()" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20"></div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-[12px] text-sub mb-1.5">カテゴリ <span class="text-brand">*</span></label><select id="form-category" onchange="updateDashPreview()" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white"><option value="">選択</option>${CATEGORIES.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+                    <div><label class="block text-[12px] text-sub mb-1.5">配信日</label><input type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white"></div>
+                  </div>
+                  <div><label class="block text-[12px] text-sub mb-1.5">本文 <span class="text-brand">*</span></label><textarea id="form-body" rows="12" placeholder="プレスリリースの本文を入力" oninput="updateDashPreview()" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20 resize-none leading-relaxed"></textarea></div>
+                </div>
+              </div>
+
+              <!-- Translation -->
+              <div class="bg-white border border-line rounded-sm p-5">
+                <h2 class="font-medium text-[13px] mb-4 flex items-center gap-2">
+                  <span class="w-5 h-5 bg-ink text-white text-[10px] flex items-center justify-center rounded-sm font-bold">2</span>
+                  翻訳・多言語配信
+                </h2>
+
+                <!-- Language selection -->
+                <div class="mb-4">
+                  <label class="block text-[12px] text-sub mb-2">翻訳する言語を選択</label>
+                  <div class="flex gap-2 flex-wrap" id="lang-checkboxes">
+                    ${LANGS.map(l => `
+                      <label class="flex items-center gap-1.5 text-[12px] cursor-pointer border border-line px-2.5 py-1.5 rounded-sm hover:border-ink/30 transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand/5">
+                        <input type="checkbox" value="${l.id}" class="rounded-sm" onchange="updateLangSelection()">
+                        <span>${l.label}</span>
+                        <span class="text-mute text-[11px]">(${l.name})</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <!-- Translate button -->
+                <button id="btn-translate" onclick="doTranslate()" class="bg-ink text-white px-4 py-2 rounded-sm text-[12px] font-medium hover:bg-ink/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                  翻訳を実行
+                </button>
+                <p class="text-[11px] text-mute mt-2">AIが日本語テキストを選択した言語に翻訳します（プロトタイプでは英語のみシミュレーション）</p>
+
+                <!-- Translation results -->
+                <div id="translation-results" class="mt-4 space-y-3 hidden">
+                </div>
+              </div>
+
+              <!-- Distribution targets -->
+              <div class="bg-white border border-line rounded-sm p-5">
+                <h2 class="font-medium text-[13px] mb-4 flex items-center gap-2">
+                  <span class="w-5 h-5 bg-ink text-white text-[10px] flex items-center justify-center rounded-sm font-bold">3</span>
+                  配信先地域
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="region-checkboxes">
+                  ${REGIONS.map(r => `
+                    <label class="flex items-center gap-2 text-[13px] cursor-pointer border border-line px-3 py-2.5 rounded-sm hover:border-ink/30 transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand/5">
+                      <input type="checkbox" value="${r.id}" class="rounded-sm">
+                      <span>${r.flag}</span>
+                      <span>${r.name}</span>
+                    </label>
+                  `).join('')}
+                </div>
+                <p class="text-[11px] text-mute mt-3">選択した地域の提携メディアにプレスリリースが配信されます</p>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex gap-3">
+                <button onclick="dashPublish()" class="bg-brand text-white px-5 py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors">配信する</button>
+                <button onclick="dashDraft()" class="border border-line text-sub px-5 py-2.5 rounded-sm text-[13px] hover:border-ink/30 transition-colors">下書き保存</button>
+              </div>
+            </div>
+
+            <!-- Preview (2 cols) -->
+            <div class="lg:col-span-2">
+              <div class="sticky top-16">
+                <p class="text-[11px] text-mute mb-2 font-medium tracking-wide">プレビュー</p>
+                <div class="bg-white border border-line rounded-sm overflow-hidden">
+                  <!-- Preview language tabs -->
+                  <div class="flex border-b border-line" id="pv-tabs">
+                    <button onclick="switchPreviewLang('ja')" data-lang="ja" class="px-3 py-2 text-[12px] font-medium tab-active">日本語</button>
+                  </div>
+                  <div class="p-4">
+                    <div class="flex items-center gap-2 mb-2 flex-wrap">
+                      <span id="pv-cat" class="text-[11px] text-mute">カテゴリ</span>
+                      <span class="text-[11px] text-mute">${fmtDate(new Date().toISOString().split('T')[0])}</span>
+                    </div>
+                    <div id="pv-regions" class="flex gap-1 mb-2 flex-wrap"></div>
+                    <h3 id="pv-title" class="font-bold text-[14px] leading-snug mb-1.5 text-ink/25">タイトル</h3>
+                    <p id="pv-summary" class="text-[12px] text-ink/20 mb-3 pb-3 border-b border-line">サマリー</p>
+                    <div id="pv-body" class="text-[12px] text-ink/20 leading-relaxed">本文</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="modal-publish" class="fixed inset-0 bg-ink/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-sm p-6 max-w-xs mx-4 border border-line">
+            <div class="flex items-center gap-2 mb-2"><span class="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-[11px]">&#10003;</span><p class="font-bold text-[15px]">配信完了</p></div>
+            <p class="text-[12px] text-sub mb-5">プレスリリースが選択した地域に配信されました。</p>
+            <div class="flex gap-2">
+              <button onclick="closeModal('modal-publish');navigate('dashboard');" class="bg-ink text-white px-4 py-1.5 rounded-sm text-[12px] font-medium hover:bg-ink/80">ダッシュボードへ</button>
+              <button onclick="closeModal('modal-publish');" class="border border-line px-4 py-1.5 rounded-sm text-[12px] text-sub hover:border-ink/30">続けて作成</button>
+            </div>
+          </div>
+        </div>
+        <div id="modal-draft" class="fixed inset-0 bg-ink/50 flex items-center justify-center z-50 hidden">
+          <div class="bg-white rounded-sm p-6 max-w-xs mx-4 border border-line">
+            <p class="font-bold text-[15px] mb-1">下書き保存しました</p>
+            <p class="text-[12px] text-sub mb-5">いつでも編集・配信できます。</p>
+            <button onclick="closeModal('modal-draft');navigate('dashboard');" class="bg-ink text-white px-4 py-1.5 rounded-sm text-[12px] font-medium hover:bg-ink/80">OK</button>
+          </div>
+        </div>
+      `;
+    }
+
+    let selectedLangs = [];
+    let previewLang = 'ja';
+
+    function updateLangSelection() {
+      selectedLangs = [...document.querySelectorAll('#lang-checkboxes input:checked')].map(el => el.value);
+      document.getElementById('btn-translate').disabled = selectedLangs.length === 0;
+    }
+
+    function doTranslate() {
+      const title = document.getElementById('form-title')?.value || '';
+      const summary = document.getElementById('form-summary')?.value || '';
+      const body = document.getElementById('form-body')?.value || '';
+
+      if (!title && !summary && !body) { alert('翻訳する日本語テキストを入力してください'); return; }
+
+      const resultsEl = document.getElementById('translation-results');
+      resultsEl.classList.remove('hidden');
+      resultsEl.innerHTML = selectedLangs.map(langId => {
+        const lang = getLangById(langId);
+        return `<div class="border border-line rounded-sm p-4" id="trans-${langId}">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[12px] font-medium">${lang.label} (${lang.name})</p>
+            <span class="spinner" id="spinner-${langId}"></span>
+          </div>
+          <p class="text-[11px] text-mute">翻訳中...</p>
+        </div>`;
+      }).join('');
+
+      // Simulate translation with staggered delays
+      selectedLangs.forEach((langId, i) => {
+        const delay = 800 + i * 600 + Math.random() * 400;
+        setTimeout(() => {
+          const lang = getLangById(langId);
+          const el = document.getElementById(`trans-${langId}`);
+          if (!el) return;
+
+          // Mock translations (only English has real mock, others get placeholder)
+          let tTitle, tSummary;
+          if (langId === 'en') {
+            tTitle = mockTranslateEn(title);
+            tSummary = mockTranslateEn(summary);
+          } else if (langId === 'zh') {
+            tTitle = `[中文] ${title}`;
+            tSummary = `[中文] ${summary}`;
+          } else if (langId === 'ko') {
+            tTitle = `[한국어] ${title}`;
+            tSummary = `[한국어] ${summary}`;
+          } else if (langId === 'es') {
+            tTitle = `[Español] ${title}`;
+            tSummary = `[Español] ${summary}`;
+          } else if (langId === 'fr') {
+            tTitle = `[Français] ${title}`;
+            tSummary = `[Français] ${summary}`;
+          } else {
+            tTitle = `[${lang.name}] ${title}`;
+            tSummary = `[${lang.name}] ${summary}`;
+          }
+
+          translatedTexts[langId] = { title: tTitle, summary: tSummary };
+
+          el.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-[12px] font-medium flex items-center gap-1.5">
+                <span class="w-4 h-4 bg-green-600 text-white rounded-full flex items-center justify-center text-[9px]">&#10003;</span>
+                ${lang.label} (${lang.name})
+              </p>
+              <button onclick="editTranslation('${langId}')" class="text-[11px] text-brand hover:underline">編集</button>
+            </div>
+            <div class="space-y-1.5">
+              <div><p class="text-[10px] text-mute">タイトル</p><p class="text-[13px]" id="trans-title-${langId}">${tTitle}</p></div>
+              <div><p class="text-[10px] text-mute">サマリー</p><p class="text-[13px]" id="trans-summary-${langId}">${tSummary}</p></div>
+            </div>
+          `;
+
+          // Update preview tabs
+          updatePreviewTabs();
+        }, delay);
+      });
+    }
+
+    function mockTranslateEn(ja) {
+      // Simple mock: return a plausible English version
+      const map = {
+        '株式会社': 'Inc.',
+        '正式リリース': 'Official Launch',
+        '新サービス': 'New Service',
+        'を発表': 'Announces',
+      };
+      let result = ja;
+      // If it's short enough, just prefix it
+      if (ja.length < 10) return `[EN] ${ja}`;
+      return `[English Translation] ${ja}`;
+    }
+
+    function editTranslation(langId) {
+      const t = translatedTexts[langId];
+      if (!t) return;
+      const el = document.getElementById(`trans-${langId}`);
+      const lang = getLangById(langId);
+      el.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[12px] font-medium">${lang.label} (${lang.name}) - 編集中</p>
+          <button onclick="saveTranslation('${langId}')" class="text-[11px] text-brand hover:underline font-medium">保存</button>
+        </div>
+        <div class="space-y-2">
+          <div><p class="text-[10px] text-mute">タイトル</p><input id="edit-title-${langId}" value="${t.title}" class="w-full px-2 py-1.5 border border-line rounded-sm text-[13px] focus:border-ink/40"></div>
+          <div><p class="text-[10px] text-mute">サマリー</p><input id="edit-summary-${langId}" value="${t.summary}" class="w-full px-2 py-1.5 border border-line rounded-sm text-[13px] focus:border-ink/40"></div>
+        </div>
+      `;
+    }
+
+    function saveTranslation(langId) {
+      const title = document.getElementById(`edit-title-${langId}`)?.value || '';
+      const summary = document.getElementById(`edit-summary-${langId}`)?.value || '';
+      translatedTexts[langId] = { title, summary };
+      // Re-render that block
+      const el = document.getElementById(`trans-${langId}`);
+      const lang = getLangById(langId);
+      el.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[12px] font-medium flex items-center gap-1.5">
+            <span class="w-4 h-4 bg-green-600 text-white rounded-full flex items-center justify-center text-[9px]">&#10003;</span>
+            ${lang.label} (${lang.name})
+          </p>
+          <button onclick="editTranslation('${langId}')" class="text-[11px] text-brand hover:underline">編集</button>
+        </div>
+        <div class="space-y-1.5">
+          <div><p class="text-[10px] text-mute">タイトル</p><p class="text-[13px]">${title}</p></div>
+          <div><p class="text-[10px] text-mute">サマリー</p><p class="text-[13px]">${summary}</p></div>
+        </div>
+      `;
+    }
+
+    function updatePreviewTabs() {
+      const tabs = document.getElementById('pv-tabs');
+      if (!tabs) return;
+      const completedLangs = Object.keys(translatedTexts);
+      tabs.innerHTML = `
+        <button onclick="switchPreviewLang('ja')" data-lang="ja" class="px-3 py-2 text-[12px] font-medium ${previewLang === 'ja' ? 'tab-active' : 'tab-inactive'}">日本語</button>
+        ${completedLangs.map(id => {
+          const l = getLangById(id);
+          return `<button onclick="switchPreviewLang('${id}')" data-lang="${id}" class="px-3 py-2 text-[12px] font-medium ${previewLang === id ? 'tab-active' : 'tab-inactive'}">${l.name}</button>`;
+        }).join('')}
+      `;
+    }
+
+    function switchPreviewLang(lang) {
+      previewLang = lang;
+      updatePreviewTabs();
+      updateDashPreview();
+    }
+
+    function updateDashPreview() {
+      const jaTitle = document.getElementById('form-title')?.value || '';
+      const jaSummary = document.getElementById('form-summary')?.value || '';
+      const jaBody = document.getElementById('form-body')?.value || '';
+      const catId = document.getElementById('form-category')?.value;
+      const cat = getCategoryById(catId);
+
+      let title, summary, body;
+      if (previewLang === 'ja') {
+        title = jaTitle; summary = jaSummary; body = jaBody;
+      } else if (translatedTexts[previewLang]) {
+        title = translatedTexts[previewLang].title || '';
+        summary = translatedTexts[previewLang].summary || '';
+        body = '(翻訳本文はプレビューでは省略)';
+      } else {
+        title = ''; summary = ''; body = '';
+      }
+
+      const t = document.getElementById('pv-title');
+      const s = document.getElementById('pv-summary');
+      const b = document.getElementById('pv-body');
+      const c = document.getElementById('pv-cat');
+      const rg = document.getElementById('pv-regions');
+
+      if (t) { t.textContent = title || 'タイトル'; t.className = `font-bold text-[14px] leading-snug mb-1.5 ${title ? 'text-ink' : 'text-ink/25'}`; }
+      if (s) { s.textContent = summary || 'サマリー'; s.className = `text-[12px] mb-3 pb-3 border-b border-line ${summary ? 'text-sub' : 'text-ink/20'}`; }
+      if (c) { c.textContent = cat ? cat.name : 'カテゴリ'; c.className = `text-[11px] ${cat ? 'text-brand font-medium' : 'text-mute'}`; }
+      if (b) {
+        if (body && body !== '(翻訳本文はプレビューでは省略)') {
+          b.innerHTML = body.split('\n').map(l => {
+            if (l.startsWith('■')) return `<p class="font-bold text-ink text-[12px] mt-2 mb-0.5">${l}</p>`;
+            if (l.startsWith('・')) return `<p class="text-sub pl-2 text-[11px]">${l}</p>`;
+            if (l.trim() === '') return '<div class="h-1.5"></div>';
+            return `<p class="text-sub text-[11px]">${l}</p>`;
+          }).join('');
+        } else if (body === '(翻訳本文はプレビューでは省略)') {
+          b.innerHTML = `<span class="text-mute text-[11px] italic">${body}</span>`;
+        } else {
+          b.innerHTML = '<span class="text-ink/20">本文</span>';
+        }
+      }
+      // Regions
+      if (rg) {
+        const checked = [...document.querySelectorAll('#region-checkboxes input:checked')].map(el => el.value);
+        rg.innerHTML = checked.length > 0 ? regionChips(checked) : '';
+      }
+    }
+
+    function getSelectedRegions() {
+      const el = document.querySelectorAll('#region-checkboxes input:checked');
+      return el ? [...el].map(e => e.value) : [];
+    }
+
+    function getSelectedLangs() {
+      return Object.keys(translatedTexts).map(id => getLangById(id)?.name).filter(Boolean);
+    }
+
+    function dashPublish() {
+      const title = document.getElementById('form-title')?.value;
+      const summary = document.getElementById('form-summary')?.value;
+      const body = document.getElementById('form-body')?.value;
+      const catId = document.getElementById('form-category')?.value;
+      if (!title || !summary || !body || !catId) { alert('必須項目を入力してください'); return; }
+      myReleases.unshift({
+        title, summary, status: 'published',
+        date: fmtDate(new Date().toISOString().split('T')[0]),
+        langs: ['日本語', ...getSelectedLangs()],
+        regions: getSelectedRegions(),
+      });
+      translatedTexts = {};
+      selectedLangs = [];
+      previewLang = 'ja';
+      document.getElementById('modal-publish').classList.remove('hidden');
+    }
+
+    function dashDraft() {
+      const title = document.getElementById('form-title')?.value;
+      myReleases.unshift({
+        title: title || '（無題）', summary: '', status: 'draft',
+        date: fmtDate(new Date().toISOString().split('T')[0]),
+        langs: ['日本語', ...getSelectedLangs()],
+        regions: getSelectedRegions(),
+      });
+      translatedTexts = {};
+      selectedLangs = [];
+      previewLang = 'ja';
+      document.getElementById('modal-draft').classList.remove('hidden');
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // Observe region checkbox changes for preview
+    document.addEventListener('change', e => {
+      if (e.target.closest('#region-checkboxes')) updateDashPreview();
+    });
+
+    // ══════════════════════════════════════════════════
+    //  ANALYTICS
+    // ══════════════════════════════════════════════════
+
+    // Generate mock GA-like data
+    function generateMockAnalytics() {
+      const today = new Date(2026, 2, 13); // 2026-03-13
+      const days = 30;
+      const slugs = PRESS_RELEASES.slice(0, 6).map(pr => ({
+        id: pr.id,
+        slug: '/press/' + pr.id,
+        title: pr.title,
+        company: getCompanyById(pr.companyId)?.name,
+        regions: pr.regions || [],
+      }));
+
+      // Daily totals
+      const dailyLabels = [];
+      const dailyPV = [];
+      const dailyUU = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        dailyLabels.push(`${d.getMonth()+1}/${d.getDate()}`);
+        const base = 120 + Math.floor(Math.random() * 80);
+        const weekday = d.getDay();
+        const factor = (weekday === 0 || weekday === 6) ? 0.6 : 1;
+        const pv = Math.floor(base * factor + (i < 5 ? 50 : 0));
+        dailyPV.push(pv);
+        dailyUU.push(Math.floor(pv * (0.55 + Math.random() * 0.15)));
+      }
+
+      // Per-slug data
+      const slugData = slugs.map((s, idx) => {
+        const basePV = [320, 280, 210, 190, 150, 120][idx] || 100;
+        const daily = [];
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const weekday = d.getDay();
+          const factor = (weekday === 0 || weekday === 6) ? 0.5 : 1;
+          const freshBoost = (i < 3 && idx < 2) ? 2.5 : (i < 7 && idx < 3) ? 1.5 : 1;
+          daily.push(Math.floor((basePV / days) * factor * freshBoost * (0.7 + Math.random() * 0.6)));
+        }
+        const totalPV = daily.reduce((a, b) => a + b, 0);
+        const totalUU = Math.floor(totalPV * (0.55 + Math.random() * 0.15));
+
+        // Region breakdown
+        const regionBreakdown = {};
+        const rids = s.regions.length > 0 ? s.regions : ['na'];
+        const shares = rids.map(() => Math.random());
+        const shareSum = shares.reduce((a, b) => a + b, 0);
+        rids.forEach((rid, j) => {
+          regionBreakdown[rid] = Math.floor(totalPV * (shares[j] / shareSum));
+        });
+
+        return { ...s, daily, totalPV, totalUU, regionBreakdown };
+      });
+
+      // Referrer data
+      const referrers = [
+        { source: 'google / organic', sessions: 1842, pv: 3210 },
+        { source: 'twitter.com / social', sessions: 956, pv: 1580 },
+        { source: 'facebook.com / social', sessions: 623, pv: 890 },
+        { source: '(direct) / (none)', sessions: 512, pv: 740 },
+        { source: 'linkedin.com / social', sessions: 389, pv: 520 },
+        { source: 'news.ycombinator.com / referral', sessions: 234, pv: 410 },
+        { source: 'pr-newswire.com / referral', sessions: 178, pv: 290 },
+        { source: 'bing / organic', sessions: 145, pv: 210 },
+      ];
+
+      // Country data
+      const countries = [
+        { name: 'アメリカ', flag: '🇺🇸', pv: 2840, pct: 28.4 },
+        { name: '日本', flag: '🇯🇵', pv: 2310, pct: 23.1 },
+        { name: 'イギリス', flag: '🇬🇧', pv: 1120, pct: 11.2 },
+        { name: 'ドイツ', flag: '🇩🇪', pv: 890, pct: 8.9 },
+        { name: 'シンガポール', flag: '🇸🇬', pv: 670, pct: 6.7 },
+        { name: '韓国', flag: '🇰🇷', pv: 540, pct: 5.4 },
+        { name: 'カナダ', flag: '🇨🇦', pv: 420, pct: 4.2 },
+        { name: 'フランス', flag: '🇫🇷', pv: 380, pct: 3.8 },
+        { name: 'その他', flag: '🌐', pv: 830, pct: 8.3 },
+      ];
+
+      const totalPV = dailyPV.reduce((a, b) => a + b, 0);
+      const totalUU = dailyUU.reduce((a, b) => a + b, 0);
+      const avgDuration = '1:42';
+      const bounceRate = '38.2%';
+
+      // Media coverage (per-release pickup list)
+      const mediaCoverage = [
+        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/12/techvision-autoflow-ai', region: 'na', lang: 'en', date: '2026-03-12', type: 'テック' },
+        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'The Verge', url: 'https://theverge.com/2026/3/12/techvision-autoflow', region: 'na', lang: 'en', date: '2026-03-12', type: 'テック' },
+        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'VentureBeat', url: 'https://venturebeat.com/ai/techvision-autoflow-ai-launch', region: 'na', lang: 'en', date: '2026-03-13', type: 'テック' },
+        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'Reuters', url: 'https://reuters.com/technology/techvision-autoflow-2026', region: 'eu', lang: 'en', date: '2026-03-12', type: '通信社' },
+        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: '36Kr', url: 'https://36kr.com/p/techvision-autoflow-ai', region: 'cn', lang: 'zh', date: '2026-03-13', type: 'テック' },
+        { slug: '/press/2', release: '100%リサイクル素材の建築資材', media: 'Bloomberg', url: 'https://bloomberg.com/news/green-factory-recycled-panels', region: 'na', lang: 'en', date: '2026-03-11', type: 'ビジネス' },
+        { slug: '/press/2', release: '100%リサイクル素材の建築資材', media: 'Financial Times', url: 'https://ft.com/content/green-factory-sustainability', region: 'eu', lang: 'en', date: '2026-03-11', type: 'ビジネス' },
+        { slug: '/press/2', release: '100%リサイクル素材の建築資材', media: 'Handelsblatt', url: 'https://handelsblatt.com/green-factory-recycling', region: 'eu', lang: 'de', date: '2026-03-12', type: 'ビジネス' },
+        { slug: '/press/3', release: 'HAKKO PROTEIN シリーズ発売', media: 'Food Navigator', url: 'https://foodnavigator.com/umami-lab-hakko-protein', region: 'eu', lang: 'en', date: '2026-03-10', type: '食品' },
+        { slug: '/press/3', release: 'HAKKO PROTEIN シリーズ発売', media: 'The Spoon', url: 'https://thespoon.tech/umami-lab-fermented-protein', region: 'na', lang: 'en', date: '2026-03-11', type: '食品' },
+        { slug: '/press/4', release: 'フルXRライブ施設オープン', media: 'Variety', url: 'https://variety.com/2026/stageone-xr-tokyo', region: 'na', lang: 'en', date: '2026-03-09', type: 'エンタメ' },
+        { slug: '/press/4', release: 'フルXRライブ施設オープン', media: 'The Hollywood Reporter', url: 'https://hollywoodreporter.com/stageone-xr-venue', region: 'na', lang: 'en', date: '2026-03-10', type: 'エンタメ' },
+        { slug: '/press/4', release: 'フルXRライブ施設オープン', media: 'Korea Herald', url: 'https://koreaherald.com/stageone-xr-tokyo-opening', region: 'kr', lang: 'ko', date: '2026-03-10', type: 'エンタメ' },
+        { slug: '/press/5', release: 'SkinCheck 医療機器認証取得', media: 'STAT News', url: 'https://statnews.com/mediwell-skincheck-approval', region: 'na', lang: 'en', date: '2026-03-08', type: '医療' },
+        { slug: '/press/5', release: 'SkinCheck 医療機器認証取得', media: 'Fierce Healthcare', url: 'https://fiercehealthcare.com/mediwell-ai-dermatology', region: 'na', lang: 'en', date: '2026-03-09', type: '医療' },
+        { slug: '/press/6', release: 'シリーズB 30億円調達', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/07/techvision-series-b', region: 'na', lang: 'en', date: '2026-03-07', type: 'テック' },
+        { slug: '/press/6', release: 'シリーズB 30億円調達', media: 'Tech in Asia', url: 'https://techinasia.com/techvision-series-b-30-billion-yen', region: 'asia', lang: 'en', date: '2026-03-07', type: 'テック' },
+        { slug: '/press/6', release: 'シリーズB 30億円調達', media: 'DealStreetAsia', url: 'https://dealstreetasia.com/stories/techvision-funding', region: 'asia', lang: 'en', date: '2026-03-08', type: 'テック' },
+        { slug: '/press/7', release: '廃バッテリーリサイクル事業提携', media: 'Automotive News', url: 'https://autonews.com/green-factory-ev-battery-recycling', region: 'na', lang: 'en', date: '2026-03-06', type: '自動車' },
+        { slug: '/press/7', release: '廃バッテリーリサイクル事業提携', media: 'Nikkei Asia', url: 'https://asia.nikkei.com/green-factory-battery-recycling', region: 'asia', lang: 'en', date: '2026-03-06', type: 'ビジネス' },
+        { slug: '/press/8', release: '韓国エンタメ企業と提携', media: 'Billboard', url: 'https://billboard.com/stageone-starlight-xr-partnership', region: 'na', lang: 'en', date: '2026-03-05', type: 'エンタメ' },
+        { slug: '/press/8', release: '韓国エンタメ企業と提携', media: 'Chosun Ilbo', url: 'https://chosun.com/stageone-starlight-partnership', region: 'kr', lang: 'ko', date: '2026-03-05', type: 'エンタメ' },
+      ];
+
+      return { dailyLabels, dailyPV, dailyUU, slugData, referrers, countries, mediaCoverage, totalPV, totalUU, avgDuration, bounceRate };
+    }
+
+    let analyticsData = null;
+    let selectedSlug = null;
+    let analyticsRange = '30d';
+
+    function renderDashAnalytics() {
+      if (!analyticsData) analyticsData = generateMockAnalytics();
+      const d = analyticsData;
+
+      const slugRows = d.slugData.map(s => {
+        const isSelected = selectedSlug === s.id;
+        const regionFlags = s.regions.map(id => { const r = REGIONS.find(x=>x.id===id); return r ? r.flag : ''; }).join(' ');
+        return `
+          <tr class="border-b border-line/60 last:border-0 cursor-pointer hover:bg-bg/50 transition-colors ${isSelected ? 'bg-brand/5' : ''}" onclick="selectSlug('${s.id}')">
+            <td class="py-3 pr-3">
+              <p class="text-[13px] font-medium line-clamp-2 ${isSelected ? 'text-brand' : ''}">${s.title}</p>
+              <p class="text-[11px] text-mute mt-0.5"><code class="bg-ink/5 px-1 py-0.5 rounded-sm text-[10px]">${s.slug}</code> <span class="ml-1">${regionFlags}</span></p>
+            </td>
+            <td class="py-3 px-3 text-right text-[13px] font-medium whitespace-nowrap">${s.totalPV.toLocaleString()}</td>
+            <td class="py-3 px-3 text-right text-[13px] text-sub whitespace-nowrap">${s.totalUU.toLocaleString()}</td>
+            <td class="py-3 pl-3 text-right">
+              <div class="inline-flex h-6 items-end gap-px">${s.daily.slice(-14).map(v => {
+                const h = Math.max(2, Math.round(v / Math.max(...s.daily) * 20));
+                return `<div class="w-1 bg-brand/30 rounded-sm" style="height:${h}px"></div>`;
+              }).join('')}</div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      const referrerRows = d.referrers.map(r => `
+        <tr class="border-b border-line/60 last:border-0">
+          <td class="py-2 pr-3 text-[12px]"><code class="text-[11px]">${r.source}</code></td>
+          <td class="py-2 px-3 text-right text-[12px] text-sub">${r.sessions.toLocaleString()}</td>
+          <td class="py-2 pl-3 text-right text-[12px] text-sub">${r.pv.toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      const countryRows = d.countries.map(c => `
+        <tr class="border-b border-line/60 last:border-0">
+          <td class="py-2 pr-3 text-[12px]">${c.flag} ${c.name}</td>
+          <td class="py-2 px-3 text-right text-[12px] text-sub">${c.pv.toLocaleString()}</td>
+          <td class="py-2 pl-3 text-right text-[12px] text-sub">${c.pct}%</td>
+        </tr>
+      `).join('');
+
+      // If a slug is selected, show its region breakdown
+      let selectedDetail = '';
+      if (selectedSlug) {
+        const s = d.slugData.find(x => x.id === selectedSlug);
+        if (s) {
+          const regionRows = Object.entries(s.regionBreakdown).map(([rid, pv]) => {
+            const r = REGIONS.find(x => x.id === rid);
+            return `<div class="flex items-center justify-between py-1.5"><span class="text-[12px]">${r?.flag || ''} ${r?.name || rid}</span><span class="text-[12px] font-medium">${pv.toLocaleString()} PV</span></div>`;
+          }).join('');
+          selectedDetail = `
+            <div class="bg-white border border-line rounded-sm p-5 mb-5">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <p class="text-[11px] text-mute">選択中のリリース</p>
+                  <p class="font-medium text-[13px] mt-0.5">${s.title}</p>
+                  <code class="text-[10px] text-mute bg-ink/5 px-1 py-0.5 rounded-sm">${s.slug}</code>
+                </div>
+                <button onclick="selectSlug(null)" class="text-[11px] text-mute hover:text-ink">解除</button>
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="bg-bg rounded-sm p-3"><p class="text-[11px] text-mute">PV (${analyticsRange === '7d' ? '7日' : '30日'})</p><p class="font-bold text-[18px]">${s.totalPV.toLocaleString()}</p></div>
+                <div class="bg-bg rounded-sm p-3"><p class="text-[11px] text-mute">UU</p><p class="font-bold text-[18px]">${s.totalUU.toLocaleString()}</p></div>
+              </div>
+              <p class="text-[11px] text-mute mb-2 font-medium">地域別PV</p>
+              <div class="divide-y divide-line/60">${regionRows}</div>
+              <div class="mt-3"><canvas id="chart-slug" height="160"></canvas></div>
+            </div>`;
+        }
+      }
+
+      return `
+        <div class="max-w-5xl mx-auto px-4 py-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <a href="#" onclick="event.preventDefault();navigate('dashboard')" class="text-[12px] text-mute hover:text-ink inline-block mb-1">&larr; ダッシュボード</a>
+              <h1 class="font-bold text-[17px]">分析</h1>
+            </div>
+            <div class="flex gap-1.5">
+              <button onclick="setRange('7d')" class="px-2.5 py-1.5 text-[12px] rounded-sm border transition-colors ${analyticsRange==='7d' ? 'bg-ink text-white border-ink' : 'border-line text-sub hover:border-ink/30 bg-white'}">7日間</button>
+              <button onclick="setRange('30d')" class="px-2.5 py-1.5 text-[12px] rounded-sm border transition-colors ${analyticsRange==='30d' ? 'bg-ink text-white border-ink' : 'border-line text-sub hover:border-ink/30 bg-white'}">30日間</button>
+            </div>
+          </div>
+
+          <!-- Connected badge -->
+          <div class="flex items-center gap-2 mb-5 text-[11px]">
+            <span class="flex items-center gap-1 text-green-600"><span class="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span> Google Analytics 連携中</span>
+            <span class="text-mute">|</span>
+            <span class="text-mute">プロパティ: ApocWire Production</span>
+            <span class="text-mute">|</span>
+            <span class="text-mute">最終同期: 2026/03/13 09:15</span>
+          </div>
+
+          <!-- Summary cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            <div class="bg-white border border-line rounded-sm p-4">
+              <p class="text-[11px] text-mute">PV (${analyticsRange === '7d' ? '7日' : '30日'})</p>
+              <p class="font-bold text-[22px] mt-1">${d.totalPV.toLocaleString()}</p>
+              <p class="text-[11px] text-green-600 mt-0.5">+12.3% 前期比</p>
+            </div>
+            <div class="bg-white border border-line rounded-sm p-4">
+              <p class="text-[11px] text-mute">ユニークユーザー</p>
+              <p class="font-bold text-[22px] mt-1">${d.totalUU.toLocaleString()}</p>
+              <p class="text-[11px] text-green-600 mt-0.5">+8.7% 前期比</p>
+            </div>
+            <div class="bg-white border border-line rounded-sm p-4">
+              <p class="text-[11px] text-mute">平均滞在時間</p>
+              <p class="font-bold text-[22px] mt-1">${d.avgDuration}</p>
+              <p class="text-[11px] text-mute mt-0.5">前期 1:35</p>
+            </div>
+            <div class="bg-white border border-line rounded-sm p-4">
+              <p class="text-[11px] text-mute">直帰率</p>
+              <p class="font-bold text-[22px] mt-1">${d.bounceRate}</p>
+              <p class="text-[11px] text-green-600 mt-0.5">-2.1pt 前期比</p>
+            </div>
+          </div>
+
+          <!-- Daily chart -->
+          <div class="bg-white border border-line rounded-sm p-5 mb-5">
+            <h2 class="font-medium text-[13px] mb-3">デイリートラフィック</h2>
+            <div style="height:220px"><canvas id="chart-daily"></canvas></div>
+          </div>
+
+          ${selectedDetail}
+
+          <!-- Slug table -->
+          <div class="bg-white border border-line rounded-sm mb-5">
+            <div class="px-5 py-3 border-b border-line">
+              <h2 class="font-medium text-[13px]">リリース別アクセス <span class="text-mute font-normal">(スラッグ別)</span></h2>
+            </div>
+            <div class="px-5 overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-line text-[11px] text-mute">
+                    <th class="text-left py-2 pr-3 font-medium">ページ</th>
+                    <th class="text-right py-2 px-3 font-medium">PV</th>
+                    <th class="text-right py-2 px-3 font-medium">UU</th>
+                    <th class="text-right py-2 pl-3 font-medium">14日間推移</th>
+                  </tr>
+                </thead>
+                <tbody>${slugRows}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Media Coverage -->
+          <div class="bg-white border border-line rounded-sm mb-5">
+            <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+              <div>
+                <h2 class="font-medium text-[13px]">掲載メディア一覧</h2>
+                <p class="text-[11px] text-mute mt-0.5">${d.mediaCoverage.length}件のメディアに掲載</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <select id="media-filter-slug" onchange="renderMediaTable()" class="px-2 py-1 border border-line rounded-sm text-[11px] bg-white focus:border-ink/40">
+                  <option value="">すべてのリリース</option>
+                  ${d.slugData.map(s => `<option value="${s.slug}">${s.title.slice(0, 30)}...</option>`).join('')}
+                </select>
+                <select id="media-filter-region" onchange="renderMediaTable()" class="px-2 py-1 border border-line rounded-sm text-[11px] bg-white focus:border-ink/40">
+                  <option value="">すべての地域</option>
+                  ${REGIONS.map(r => `<option value="${r.id}">${r.flag} ${r.name}</option>`).join('')}
+                </select>
+                <button onclick="downloadMediaCSV()" class="flex items-center gap-1 px-2.5 py-1.5 border border-line rounded-sm text-[11px] font-medium text-sub hover:border-ink/30 hover:text-ink transition-colors bg-white">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                  CSV
+                </button>
+              </div>
+            </div>
+            <div class="px-5 overflow-x-auto" id="media-table-container">
+              <table class="w-full" id="media-table">
+                <thead>
+                  <tr class="border-b border-line text-[11px] text-mute">
+                    <th class="text-left py-2 pr-2 font-medium">掲載日</th>
+                    <th class="text-left py-2 px-2 font-medium">メディア名</th>
+                    <th class="text-left py-2 px-2 font-medium">対象リリース</th>
+                    <th class="text-left py-2 px-2 font-medium">地域</th>
+                    <th class="text-left py-2 px-2 font-medium">言語</th>
+                    <th class="text-left py-2 px-2 font-medium">カテゴリ</th>
+                    <th class="text-left py-2 pl-2 font-medium">URL</th>
+                  </tr>
+                </thead>
+                <tbody id="media-table-body">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom grid: referrers + countries -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Referrers -->
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line">
+                <h2 class="font-medium text-[13px]">参照元 / メディア</h2>
+              </div>
+              <div class="px-5 overflow-x-auto">
+                <table class="w-full">
+                  <thead><tr class="border-b border-line text-[11px] text-mute"><th class="text-left py-2 pr-3 font-medium">ソース</th><th class="text-right py-2 px-3 font-medium">セッション</th><th class="text-right py-2 pl-3 font-medium">PV</th></tr></thead>
+                  <tbody>${referrerRows}</tbody>
+                </table>
+              </div>
+            </div>
+            <!-- Countries -->
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+                <h2 class="font-medium text-[13px]">国別アクセス</h2>
+              </div>
+              <div class="px-5 overflow-x-auto">
+                <table class="w-full">
+                  <thead><tr class="border-b border-line text-[11px] text-mute"><th class="text-left py-2 pr-3 font-medium">国</th><th class="text-right py-2 px-3 font-medium">PV</th><th class="text-right py-2 pl-3 font-medium">割合</th></tr></thead>
+                  <tbody>${countryRows}</tbody>
+                </table>
+              </div>
+              <div class="p-5 pt-3"><canvas id="chart-country" height="180"></canvas></div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderMediaTable() {
+      if (!analyticsData) return;
+      const slugFilter = document.getElementById('media-filter-slug')?.value || '';
+      const regionFilter = document.getElementById('media-filter-region')?.value || '';
+      let items = analyticsData.mediaCoverage;
+      if (slugFilter) items = items.filter(m => m.slug === slugFilter);
+      if (regionFilter) items = items.filter(m => m.region === regionFilter);
+
+      const langLabel = { en: 'EN', zh: '中文', ko: '한국어', de: 'DE', fr: 'FR', es: 'ES', ja: 'JA' };
+      const body = document.getElementById('media-table-body');
+      if (!body) return;
+      body.innerHTML = items.map(m => {
+        const reg = REGIONS.find(r => r.id === m.region);
+        return `
+          <tr class="border-b border-line/60 last:border-0">
+            <td class="py-2.5 pr-2 text-[12px] text-mute whitespace-nowrap">${fmtDate(m.date)}</td>
+            <td class="py-2.5 px-2 text-[12px] font-medium">${m.media}</td>
+            <td class="py-2.5 px-2 text-[12px] text-sub max-w-[200px]"><p class="truncate">${m.release}</p><code class="text-[10px] text-mute">${m.slug}</code></td>
+            <td class="py-2.5 px-2 text-[12px] text-sub whitespace-nowrap">${reg ? reg.flag + ' ' + reg.name : m.region}</td>
+            <td class="py-2.5 px-2"><span class="text-[10px] px-1.5 py-0.5 bg-ink/5 text-sub rounded-sm">${langLabel[m.lang] || m.lang}</span></td>
+            <td class="py-2.5 px-2 text-[12px] text-sub">${m.type}</td>
+            <td class="py-2.5 pl-2 text-[12px]"><a href="${m.url}" target="_blank" class="text-brand hover:underline truncate block max-w-[160px]">${m.url.replace(/https?:\/\//, '').split('/')[0]}</a></td>
+          </tr>`;
+      }).join('');
+      if (items.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-mute text-[12px]">該当する掲載がありません</td></tr>';
+      }
+    }
+
+    function getFilteredMedia() {
+      if (!analyticsData) return [];
+      const slugFilter = document.getElementById('media-filter-slug')?.value || '';
+      const regionFilter = document.getElementById('media-filter-region')?.value || '';
+      let items = analyticsData.mediaCoverage;
+      if (slugFilter) items = items.filter(m => m.slug === slugFilter);
+      if (regionFilter) items = items.filter(m => m.region === regionFilter);
+      return items;
+    }
+
+    function downloadMediaCSV() {
+      const items = getFilteredMedia();
+      if (items.length === 0) { alert('ダウンロードするデータがありません'); return; }
+
+      const BOM = '\uFEFF';
+      const header = ['掲載日', 'メディア名', '対象リリース', 'スラッグ', '地域', '言語', 'カテゴリ', 'URL'];
+      const rows = items.map(m => {
+        const reg = REGIONS.find(r => r.id === m.region);
+        return [
+          m.date,
+          m.media,
+          m.release,
+          m.slug,
+          reg ? reg.name : m.region,
+          m.lang,
+          m.type,
+          m.url,
+        ].map(v => '"' + String(v).replace(/"/g, '""') + '"');
+      });
+
+      const csv = BOM + [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `apocwire_media_coverage_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function selectSlug(id) {
+      selectedSlug = (selectedSlug === id) ? null : id;
+      render();
+      initCharts();
+    }
+
+    function setRange(range) {
+      analyticsRange = range;
+      analyticsData = generateMockAnalytics();
+      render();
+      initCharts();
+    }
+
+    let chartInstances = {};
+    function initCharts() {
+      if (!analyticsData) return;
+      const d = analyticsData;
+
+      // Destroy existing charts
+      Object.values(chartInstances).forEach(c => c.destroy?.());
+      chartInstances = {};
+
+      const labels = analyticsRange === '7d' ? d.dailyLabels.slice(-7) : d.dailyLabels;
+      const pvData = analyticsRange === '7d' ? d.dailyPV.slice(-7) : d.dailyPV;
+      const uuData = analyticsRange === '7d' ? d.dailyUU.slice(-7) : d.dailyUU;
+
+      const sharedOpts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 8, boxHeight: 8, font: { size: 11 }, padding: 12 } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#999', maxTicksLimit: 10 } },
+          y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 10 }, color: '#999' }, beginAtZero: true },
+        },
+        interaction: { mode: 'index', intersect: false },
+      };
+
+      // Daily chart
+      const dailyEl = document.getElementById('chart-daily');
+      if (dailyEl) {
+        chartInstances.daily = new Chart(dailyEl.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'PV', data: pvData, borderColor: '#e8380d', backgroundColor: 'rgba(232,56,13,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
+              { label: 'UU', data: uuData, borderColor: '#999', backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 4, borderDash: [4, 2] },
+            ],
+          },
+          options: sharedOpts,
+        });
+      }
+
+      // Slug detail chart
+      if (selectedSlug) {
+        const s = d.slugData.find(x => x.id === selectedSlug);
+        const slugEl = document.getElementById('chart-slug');
+        if (slugEl && s) {
+          const slabels = analyticsRange === '7d' ? d.dailyLabels.slice(-7) : d.dailyLabels;
+          const sdata = analyticsRange === '7d' ? s.daily.slice(-7) : s.daily;
+          chartInstances.slug = new Chart(slugEl.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: slabels,
+              datasets: [{ label: 'PV', data: sdata, backgroundColor: 'rgba(232,56,13,0.6)', borderRadius: 2 }],
+            },
+            options: {
+              ...sharedOpts,
+              plugins: { legend: { display: false } },
+            },
+          });
+        }
+      }
+
+      // Country doughnut
+      const countryEl = document.getElementById('chart-country');
+      if (countryEl) {
+        const top5 = d.countries.slice(0, 5);
+        const otherPV = d.countries.slice(5).reduce((a, c) => a + c.pv, 0);
+        chartInstances.country = new Chart(countryEl.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: [...top5.map(c => c.name), 'その他'],
+            datasets: [{
+              data: [...top5.map(c => c.pv), otherPV],
+              backgroundColor: ['#e8380d', '#222', '#666', '#999', '#ccc', '#e8e8e8'],
+              borderWidth: 0,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '55%',
+            plugins: { legend: { position: 'right', labels: { boxWidth: 8, boxHeight: 8, font: { size: 10 }, padding: 6 } } },
+          },
+        });
+      }
+
+      // Render media table after charts
+      renderMediaTable();
+    }
+
+    // ══════════════════════════════════════════════════
+    //  TRANSLATION ORDERS (shared mock data)
+    // ══════════════════════════════════════════════════
+    const TRANSLATORS = [
+      { id: 't1', name: '田中 美咲', nameEn: 'Misaki Tanaka', langs: ['en', 'zh'], rating: 4.8, jobs: 142, status: 'active' },
+      { id: 't2', name: 'Smith, John', nameEn: 'John Smith', langs: ['en', 'de'], rating: 4.9, jobs: 89, status: 'active' },
+      { id: 't3', name: '李 雪華', nameEn: 'Xuehua Li', langs: ['zh', 'en'], rating: 4.7, jobs: 67, status: 'active' },
+      { id: 't4', name: 'Müller, Anna', nameEn: 'Anna Müller', langs: ['de', 'en', 'fr'], rating: 4.6, jobs: 53, status: 'active' },
+      { id: 't5', name: '김 수진', nameEn: 'Sujin Kim', langs: ['ko', 'en'], rating: 4.8, jobs: 38, status: 'away' },
+    ];
+
+    let translationOrders = [
+      { id: 'TO-001', releaseTitle: '新型燃料電池車「MIRAI NEXT」を2026年秋に全世界同時発売', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'in_progress', assignee: 't1', deadline: '2026/03/14', wordCount: 1200, createdAt: '2026/03/12', body: '■ 概要\n新型MIRAI NEXTは、第3世代FCスタックを搭載し航続距離1,000kmを実現。\n\n■ 主な特徴\n・航続距離：1,050km（WLTCモード）\n・水素充填時間：約3分\n・新開発の軽量カーボンタンク採用\n・OTAアップデート対応', translatedBody: '' },
+      { id: 'TO-002', releaseTitle: '新型燃料電池車「MIRAI NEXT」を2026年秋に全世界同時発売', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'zh', status: 'pending', assignee: null, deadline: '2026/03/15', wordCount: 1200, createdAt: '2026/03/12', body: '■ 概要\n新型MIRAI NEXTは、第3世代FCスタックを搭載し航続距離1,000kmを実現。\n\n■ 主な特徴\n・航続距離：1,050km（WLTCモード）\n・水素充填時間：約3分\n・新開発の軽量カーボンタンク採用\n・OTAアップデート対応', translatedBody: '' },
+      { id: 'TO-003', releaseTitle: 'トヨタとBMW、全固体電池の共同量産に向けた合弁会社を設立', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'completed', assignee: 't2', deadline: '2026/03/11', wordCount: 980, createdAt: '2026/03/09', body: '■ 合弁会社概要\n・社名：Toyota-BMW Solid State Battery GmbH\n・所在地：ドイツ・ミュンヘン\n・出資比率：トヨタ60% / BMW 40%\n・投資総額：5,000億円', translatedBody: '■ Joint Venture Overview\n- Company Name: Toyota-BMW Solid State Battery GmbH\n- Location: Munich, Germany\n- Equity Split: Toyota 60% / BMW 40%\n- Total Investment: ¥500 billion' },
+      { id: 'TO-004', releaseTitle: 'トヨタとBMW、全固体電池の共同量産に向けた合弁会社を設立', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'de', status: 'in_progress', assignee: 't4', deadline: '2026/03/14', wordCount: 980, createdAt: '2026/03/09', body: '■ 合弁会社概要\n・社名：Toyota-BMW Solid State Battery GmbH\n・所在地：ドイツ・ミュンヘン\n・出資比率：トヨタ60% / BMW 40%\n・投資総額：5,000億円', translatedBody: '' },
+      { id: 'TO-005', releaseTitle: '自動運転レベル4対応「Toyota Chauffeur」が米カリフォルニア州で公道走行許可を取得', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'pending', assignee: null, deadline: '2026/03/16', wordCount: 850, createdAt: '2026/03/13', body: '■ 許可内容\n・走行エリア：サンフランシスコ市内全域\n・時間帯制限なし（24時間走行可能）\n・乗客を乗せた商用運行を許可', translatedBody: '' },
+      { id: 'TO-006', releaseTitle: 'Woven City、第一期居住者500名の入居を2026年夏に開始', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'in_progress', assignee: 't1', deadline: '2026/03/15', wordCount: 760, createdAt: '2026/03/11', body: '■ Woven City 第一期概要\n・居住者：約500名（トヨタ社員・家族・研究者）\n・住居数：約150戸\n・実証テーマ：自動運転、ロボティクス、AI、スマートホーム、水素エネルギー', translatedBody: '' },
+      { id: 'TO-007', releaseTitle: '月面探査車「LUNAR CRUISER」の最終試作機が完成', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'review', assignee: 't2', deadline: '2026/03/12', wordCount: 920, createdAt: '2026/03/08', body: '■ LUNAR CRUISER概要\n・全長：6.0m × 全幅：5.2m × 全高：3.8m\n・乗員：2名（最大4名）\n・航続距離：10,000km以上', translatedBody: '■ LUNAR CRUISER Overview\n- Dimensions: 6.0m L × 5.2m W × 3.8m H\n- Crew: 2 (max 4)\n- Range: Over 10,000 km\n- Hybrid fuel cell + solar power system' },
+      { id: 'TO-008', releaseTitle: 'トヨタ・リサーチ・インスティテュート、大規模言語モデルを活用した車両設計AIを発表', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'completed', assignee: 't1', deadline: '2026/03/10', wordCount: 680, createdAt: '2026/03/07', body: '■ 技術概要\n・自然言語による車両デザイン指示\n・AIが3Dモデルを10分以内に自動生成', translatedBody: '■ Technology Overview\n- Natural language vehicle design commands\n- AI generates 3D models within 10 minutes\n- Simultaneous aerodynamic simulation\n- 60% reduction in development time vs. conventional methods' },
+    ];
+
+    const orderStatusLabel = (s) => ({
+      pending: { text: '未着手', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+      in_progress: { text: '翻訳中', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+      review: { text: 'レビュー中', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
+      completed: { text: '完了', cls: 'bg-green-50 text-green-700 border-green-200' },
+    }[s] || { text: s, cls: 'bg-ink/5 text-sub' });
+
+    // langCode defined earlier, near utility functions
+
+    // ══════════════════════════════════════════════════
+    //  TRANSLATOR DASHBOARD
+    // ══════════════════════════════════════════════════
+    function renderTransDashboard() {
+      const myId = currentUser?.translatorId || 't1';
+      const myOrders = translationOrders.filter(o => o.assignee === myId);
+      const availableOrders = translationOrders.filter(o => o.status === 'pending' && !o.assignee);
+      const active = myOrders.filter(o => o.status === 'in_progress');
+      const review = myOrders.filter(o => o.status === 'review');
+      const done = myOrders.filter(o => o.status === 'completed');
+
+      const orderRow = (o, showAccept) => {
+        const st = orderStatusLabel(o.status);
+        return `
+        <div onclick="navigate('trans-work', {orderId: '${o.id}'})" class="py-3 border-b border-line/60 last:border-0 cursor-pointer hover:bg-bg/60 transition-colors -mx-5 px-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="text-[13px] font-medium truncate">${o.releaseTitle}</p>
+              <div class="flex items-center gap-2 mt-1 flex-wrap">
+                <span class="text-[10px] px-1.5 py-0.5 border ${st.cls} font-medium">${st.text}</span>
+                <span class="text-[11px] text-mute">${o.client}</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-ink/5 text-sub">${langCode(o.sourceLang)} → ${langCode(o.targetLang)}</span>
+                <span class="text-[11px] text-mute">${o.wordCount}字</span>
+                <span class="text-[11px] text-mute">〆 ${o.deadline}</span>
+              </div>
+            </div>
+            ${showAccept ? `<button onclick="event.stopPropagation(); acceptOrder('${o.id}')" class="text-[11px] bg-brand text-white px-2.5 py-1 rounded-sm hover:bg-brand-dark transition-colors flex-shrink-0">受注する</button>` : ''}
+          </div>
+        </div>`;
+      };
+
+      return `
+        <div class="max-w-3xl mx-auto px-4 py-6">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h1 class="font-bold text-[17px]">翻訳者ダッシュボード</h1>
+              <p class="text-[12px] text-mute mt-0.5">${currentUser ? currentUser.name : ''} — ${(() => { const tr = TRANSLATORS.find(t => t.id === myId); return tr ? tr.langs.map(langCode).join(' / ') : ''; })()}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-4 gap-3 mb-6">
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">作業中</p><p class="font-bold text-[22px] mt-1 text-blue-600">${active.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">レビュー中</p><p class="font-bold text-[22px] mt-1 text-purple-600">${review.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">完了</p><p class="font-bold text-[22px] mt-1 text-green-600">${done.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">受注可能</p><p class="font-bold text-[22px] mt-1 text-yellow-600">${availableOrders.length}</p></div>
+          </div>
+
+          <!-- Available orders -->
+          ${availableOrders.length > 0 ? `
+          <div class="bg-white border border-yellow-200 rounded-sm mb-4">
+            <div class="px-5 py-3 border-b border-yellow-200 bg-yellow-50/50 flex items-center justify-between">
+              <h2 class="font-medium text-[13px]">受注可能な案件</h2>
+              <span class="text-[11px] text-mute">${availableOrders.length}件</span>
+            </div>
+            <div class="px-5">${availableOrders.map(o => orderRow(o, true)).join('')}</div>
+          </div>` : ''}
+
+          <!-- My active orders -->
+          <div class="bg-white border border-line rounded-sm mb-4">
+            <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+              <h2 class="font-medium text-[13px]">担当中の案件</h2>
+              <span class="text-[11px] text-mute">${active.length + review.length}件</span>
+            </div>
+            <div class="px-5">
+              ${[...active, ...review].length > 0 ? [...active, ...review].map(o => orderRow(o, false)).join('') : '<div class="py-8 text-center text-mute text-[13px]">担当中の案件はありません</div>'}
+            </div>
+          </div>
+
+          <!-- Completed -->
+          <div class="bg-white border border-line rounded-sm">
+            <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+              <h2 class="font-medium text-[13px]">完了済み</h2>
+              <span class="text-[11px] text-mute">${done.length}件</span>
+            </div>
+            <div class="px-5">
+              ${done.length > 0 ? done.map(o => orderRow(o, false)).join('') : '<div class="py-8 text-center text-mute text-[13px]">完了済みの案件はありません</div>'}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function acceptOrder(orderId) {
+      const o = translationOrders.find(x => x.id === orderId);
+      if (o) { o.assignee = currentUser?.translatorId || 't1'; o.status = 'in_progress'; }
+      render();
+    }
+
+    // ══════════════════════════════════════════════════
+    //  TRANSLATOR WORK PAGE
+    // ══════════════════════════════════════════════════
+    function renderTransWork() {
+      const o = translationOrders.find(x => x.id === currentParams.orderId);
+      if (!o) return `<div class="max-w-3xl mx-auto px-4 py-12 text-center"><p class="text-mute">案件が見つかりません</p><button onclick="navigate('trans-dashboard')" class="mt-4 text-brand text-[13px] hover:underline">← 案件一覧へ</button></div>`;
+
+      const st = orderStatusLabel(o.status);
+      const isEditable = o.status === 'in_progress';
+      const isReview = o.status === 'review';
+      const isCompleted = o.status === 'completed';
+
+      return `
+        <div class="max-w-5xl mx-auto px-4 py-6">
+          <button onclick="navigate('trans-dashboard')" class="text-[12px] text-mute hover:text-ink transition-colors mb-4 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            案件一覧へ戻る
+          </button>
+
+          <div class="flex items-start justify-between gap-4 mb-5">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] px-1.5 py-0.5 border ${st.cls} font-medium">${st.text}</span>
+                <span class="text-[11px] text-mute">${o.id}</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-ink/5 text-sub">${langCode(o.sourceLang)} → ${langCode(o.targetLang)}</span>
+              </div>
+              <h1 class="text-[17px] font-bold leading-snug">${o.releaseTitle}</h1>
+              <div class="flex items-center gap-3 mt-1 text-[11px] text-mute">
+                <span>${o.client}</span>
+                <span>${o.wordCount}字</span>
+                <span>〆切: ${o.deadline}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Source text -->
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+                <h2 class="font-medium text-[13px]">原文（${langCode(o.sourceLang)}）</h2>
+                <span class="text-[11px] text-mute">${o.wordCount}字</span>
+              </div>
+              <div class="p-5">
+                <pre class="text-[13px] text-sub whitespace-pre-wrap font-[inherit] leading-relaxed">${o.body}</pre>
+              </div>
+            </div>
+
+            <!-- Translation area -->
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+                <h2 class="font-medium text-[13px]">翻訳（${langCode(o.targetLang)}）</h2>
+                ${isEditable ? '<span class="text-[11px] text-blue-600">編集可能</span>' : ''}
+                ${isCompleted ? '<span class="text-[11px] text-green-600">納品済み</span>' : ''}
+              </div>
+              <div class="p-5">
+                ${isEditable ? `
+                  <textarea id="trans-body" rows="16" class="w-full text-[13px] border border-line rounded-sm p-3 bg-white focus:border-ink/40 resize-none leading-relaxed placeholder:text-ink/20" placeholder="ここに翻訳文を入力...">${o.translatedBody || ''}</textarea>
+                  <div class="flex items-center gap-2 mt-3">
+                    <button onclick="saveTranslation('${o.id}')" class="bg-ink text-white text-[12px] px-3.5 py-1.5 rounded-sm font-medium hover:bg-ink/80 transition-colors">下書き保存</button>
+                    <button onclick="submitTranslation('${o.id}')" class="bg-brand text-white text-[12px] px-3.5 py-1.5 rounded-sm font-medium hover:bg-brand-dark transition-colors">レビューに提出</button>
+                  </div>
+                ` : `
+                  <pre class="text-[13px] text-sub whitespace-pre-wrap font-[inherit] leading-relaxed ${!o.translatedBody ? 'text-mute italic' : ''}">${o.translatedBody || '（翻訳未着手）'}</pre>
+                  ${isReview ? '<p class="text-[12px] text-purple-600 mt-3 border-t border-line pt-3">レビュー待ちです。APOC管理者が確認中です。</p>' : ''}
+                `}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function saveTranslation(orderId) {
+      const o = translationOrders.find(x => x.id === orderId);
+      if (o) { o.translatedBody = document.getElementById('trans-body').value; }
+      alert('保存しました');
+    }
+
+    function submitTranslation(orderId) {
+      const o = translationOrders.find(x => x.id === orderId);
+      if (o) {
+        o.translatedBody = document.getElementById('trans-body').value;
+        if (!o.translatedBody.trim()) { alert('翻訳文を入力してください'); return; }
+        o.status = 'review';
+      }
+      render();
+    }
+
+    // ══════════════════════════════════════════════════
+    //  APOC ADMIN DASHBOARD
+    // ══════════════════════════════════════════════════
+    function renderAdminDashboard() {
+      const pending = translationOrders.filter(o => o.status === 'pending');
+      const inProgress = translationOrders.filter(o => o.status === 'in_progress');
+      const review = translationOrders.filter(o => o.status === 'review');
+      const completed = translationOrders.filter(o => o.status === 'completed');
+      const activeTranslators = TRANSLATORS.filter(t => t.status === 'active');
+
+      return `
+        <div class="max-w-6xl mx-auto px-4 py-6">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h1 class="font-bold text-[17px]">APOC管理ダッシュボード</h1>
+              <p class="text-[12px] text-mute mt-0.5">株式会社APOC — サービス運営管理</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">未アサイン</p><p class="font-bold text-[22px] mt-1 text-yellow-600">${pending.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">翻訳中</p><p class="font-bold text-[22px] mt-1 text-blue-600">${inProgress.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">レビュー待ち</p><p class="font-bold text-[22px] mt-1 text-purple-600">${review.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">完了</p><p class="font-bold text-[22px] mt-1 text-green-600">${completed.length}</p></div>
+            <div class="bg-white border border-line rounded-sm p-4"><p class="text-[11px] text-mute">稼働翻訳者</p><p class="font-bold text-[22px] mt-1">${activeTranslators.length}</p></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Urgent: unassigned + review -->
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line">
+                <h2 class="font-medium text-[13px]">要対応</h2>
+              </div>
+              <div class="px-5">
+                ${[...pending, ...review].map(o => {
+                  const st = orderStatusLabel(o.status);
+                  return `
+                  <div onclick="navigate('admin-order-detail', {orderId: '${o.id}'})" class="py-3 border-b border-line/60 last:border-0 cursor-pointer hover:bg-bg/60 transition-colors -mx-5 px-5">
+                    <p class="text-[13px] font-medium truncate">${o.releaseTitle}</p>
+                    <div class="flex items-center gap-2 mt-1 text-[11px] flex-wrap">
+                      <span class="text-[10px] px-1.5 py-0.5 border ${st.cls} font-medium">${st.text}</span>
+                      <span class="text-mute">${langCode(o.sourceLang)}→${langCode(o.targetLang)}</span>
+                      <span class="text-mute">〆${o.deadline}</span>
+                      <span class="text-mute">${o.client}</span>
+                    </div>
+                  </div>`;
+                }).join('') || '<div class="py-8 text-center text-mute text-[13px]">対応が必要な案件はありません</div>'}
+              </div>
+            </div>
+
+            <!-- Active translators -->
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line flex items-center justify-between">
+                <h2 class="font-medium text-[13px]">翻訳者ステータス</h2>
+                <a href="#" onclick="event.preventDefault(); navigate('admin-translators')" class="text-[11px] text-brand hover:underline">全て見る</a>
+              </div>
+              <div class="px-5">
+                ${TRANSLATORS.map(t => {
+                  const activeJobs = translationOrders.filter(o => o.assignee === t.id && (o.status === 'in_progress' || o.status === 'review'));
+                  return `
+                  <div class="py-3 border-b border-line/60 last:border-0 flex items-center justify-between">
+                    <div>
+                      <p class="text-[13px] font-medium">${t.name}</p>
+                      <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-[11px] text-mute">${t.langs.map(langCode).join(' / ')}</span>
+                        <span class="text-[10px] ${t.status === 'active' ? 'text-green-600' : 'text-yellow-600'}">${t.status === 'active' ? '稼働中' : '休止中'}</span>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-[13px] font-bold">${activeJobs.length}</p>
+                      <p class="text-[10px] text-mute">担当中</p>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick links -->
+          <div class="grid grid-cols-3 gap-3 mt-5">
+            <button onclick="navigate('admin-orders')" class="bg-white border border-line rounded-sm p-4 text-left hover:border-ink/30 transition-colors">
+              <p class="font-medium text-[13px]">翻訳案件管理</p>
+              <p class="text-[11px] text-mute mt-0.5">全案件の確認・アサイン・承認</p>
+            </button>
+            <button onclick="navigate('admin-translators')" class="bg-white border border-line rounded-sm p-4 text-left hover:border-ink/30 transition-colors">
+              <p class="font-medium text-[13px]">翻訳者管理</p>
+              <p class="text-[11px] text-mute mt-0.5">翻訳者の登録・評価・稼働管理</p>
+            </button>
+            <button onclick="navigate('admin-clients')" class="bg-white border border-line rounded-sm p-4 text-left hover:border-ink/30 transition-colors">
+              <p class="font-medium text-[13px]">事業者管理</p>
+              <p class="text-[11px] text-mute mt-0.5">利用企業の一覧・契約状況</p>
+            </button>
+          </div>
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  ADMIN ORDERS
+    // ══════════════════════════════════════════════════
+    function renderAdminOrders() {
+      return `
+        <div class="max-w-6xl mx-auto px-4 py-6">
+          <button onclick="navigate('admin-dashboard')" class="text-[12px] text-mute hover:text-ink transition-colors mb-4 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            管理トップへ
+          </button>
+          <div class="flex items-center justify-between mb-5">
+            <h1 class="font-bold text-[17px]">翻訳案件一覧</h1>
+            <span class="text-[12px] text-mute">${translationOrders.length}件</span>
+          </div>
+          <div class="bg-white border border-line rounded-sm overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-line text-[11px] text-mute bg-bg/50">
+                  <th class="text-left py-2.5 px-4 font-medium">ID</th>
+                  <th class="text-left py-2.5 px-4 font-medium">リリース</th>
+                  <th class="text-left py-2.5 px-4 font-medium">事業者</th>
+                  <th class="text-left py-2.5 px-4 font-medium">言語</th>
+                  <th class="text-left py-2.5 px-4 font-medium">担当者</th>
+                  <th class="text-left py-2.5 px-4 font-medium">ステータス</th>
+                  <th class="text-left py-2.5 px-4 font-medium">〆切</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${translationOrders.map(o => {
+                  const st = orderStatusLabel(o.status);
+                  const assignee = o.assignee ? TRANSLATORS.find(t => t.id === o.assignee) : null;
+                  return `
+                  <tr onclick="navigate('admin-order-detail', {orderId: '${o.id}'})" class="border-b border-line/60 last:border-0 cursor-pointer hover:bg-bg/60 transition-colors">
+                    <td class="py-3 px-4 text-[12px] text-mute whitespace-nowrap">${o.id}</td>
+                    <td class="py-3 px-4 text-[12px] font-medium max-w-[250px]"><p class="truncate">${o.releaseTitle}</p></td>
+                    <td class="py-3 px-4 text-[12px] text-sub whitespace-nowrap">${o.client}</td>
+                    <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 bg-ink/5 text-sub">${langCode(o.sourceLang)}→${langCode(o.targetLang)}</span></td>
+                    <td class="py-3 px-4 text-[12px] ${assignee ? 'text-sub' : 'text-yellow-600'}">${assignee ? assignee.name : '未アサイン'}</td>
+                    <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 border ${st.cls} font-medium">${st.text}</span></td>
+                    <td class="py-3 px-4 text-[12px] text-mute whitespace-nowrap">${o.deadline}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  ADMIN ORDER DETAIL
+    // ══════════════════════════════════════════════════
+    function renderAdminOrderDetail() {
+      const o = translationOrders.find(x => x.id === currentParams.orderId);
+      if (!o) return `<div class="max-w-3xl mx-auto px-4 py-12 text-center"><p class="text-mute">案件が見つかりません</p></div>`;
+
+      const st = orderStatusLabel(o.status);
+      const assignee = o.assignee ? TRANSLATORS.find(t => t.id === o.assignee) : null;
+      const availableTranslators = TRANSLATORS.filter(t => t.status === 'active' && t.langs.includes(o.targetLang));
+
+      return `
+        <div class="max-w-5xl mx-auto px-4 py-6">
+          <button onclick="navigate('admin-orders')" class="text-[12px] text-mute hover:text-ink transition-colors mb-4 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            案件一覧へ
+          </button>
+
+          <div class="flex items-start justify-between gap-4 mb-5">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] px-1.5 py-0.5 border ${st.cls} font-medium">${st.text}</span>
+                <span class="text-[11px] text-mute">${o.id}</span>
+              </div>
+              <h1 class="text-[17px] font-bold leading-snug">${o.releaseTitle}</h1>
+              <div class="flex items-center gap-3 mt-1 text-[11px] text-mute">
+                <span>${o.client}</span>
+                <span>${langCode(o.sourceLang)} → ${langCode(o.targetLang)}</span>
+                <span>${o.wordCount}字</span>
+                <span>〆切: ${o.deadline}</span>
+              </div>
+            </div>
+            ${o.status === 'review' ? `<button onclick="approveOrder('${o.id}')" class="bg-green-600 text-white text-[12px] px-3.5 py-1.5 rounded-sm font-medium hover:bg-green-700 transition-colors flex-shrink-0">承認して完了</button>` : ''}
+          </div>
+
+          <!-- Assignment -->
+          <div class="bg-white border border-line rounded-sm mb-4">
+            <div class="px-5 py-3 border-b border-line"><h2 class="font-medium text-[13px]">翻訳者アサイン</h2></div>
+            <div class="p-5">
+              ${assignee ? `
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-[13px] font-medium">${assignee.name}</p>
+                    <p class="text-[11px] text-mute">${assignee.langs.map(langCode).join(' / ')} — 評価 ${assignee.rating} — ${assignee.jobs}件実績</p>
+                  </div>
+                  ${o.status !== 'completed' ? `<button onclick="unassignOrder('${o.id}')" class="text-[11px] text-mute hover:text-red-500 transition-colors">アサイン解除</button>` : ''}
+                </div>
+              ` : `
+                <p class="text-[12px] text-yellow-600 mb-3">翻訳者が未アサインです</p>
+                <div class="flex items-center gap-2">
+                  <select id="assign-translator" class="text-[12px] border border-line rounded-sm px-2.5 py-1.5 bg-white">
+                    <option value="">翻訳者を選択...</option>
+                    ${availableTranslators.map(t => `<option value="${t.id}">${t.name}（${t.langs.map(langCode).join('/')}）— ${t.rating}★</option>`).join('')}
+                  </select>
+                  <button onclick="assignOrder('${o.id}')" class="bg-ink text-white text-[12px] px-3 py-1.5 rounded-sm font-medium hover:bg-ink/80 transition-colors">アサイン</button>
+                </div>
+              `}
+            </div>
+          </div>
+
+          <!-- Source & Translation side by side -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line"><h2 class="font-medium text-[13px]">原文（${langCode(o.sourceLang)}）</h2></div>
+              <div class="p-5"><pre class="text-[13px] text-sub whitespace-pre-wrap font-[inherit] leading-relaxed">${o.body}</pre></div>
+            </div>
+            <div class="bg-white border border-line rounded-sm">
+              <div class="px-5 py-3 border-b border-line"><h2 class="font-medium text-[13px]">翻訳（${langCode(o.targetLang)}）</h2></div>
+              <div class="p-5"><pre class="text-[13px] text-sub whitespace-pre-wrap font-[inherit] leading-relaxed ${!o.translatedBody ? 'text-mute italic' : ''}">${o.translatedBody || '（翻訳未着手）'}</pre></div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function assignOrder(orderId) {
+      const sel = document.getElementById('assign-translator');
+      if (!sel || !sel.value) { alert('翻訳者を選択してください'); return; }
+      const o = translationOrders.find(x => x.id === orderId);
+      if (o) { o.assignee = sel.value; o.status = 'in_progress'; }
+      render();
+    }
+
+    function unassignOrder(orderId) {
+      const o = translationOrders.find(x => x.id === orderId);
+      if (o) { o.assignee = null; o.status = 'pending'; }
+      render();
+    }
+
+    function approveOrder(orderId) {
+      const o = translationOrders.find(x => x.id === orderId);
+      if (o) { o.status = 'completed'; }
+      render();
+    }
+
+    // ══════════════════════════════════════════════════
+    //  ADMIN TRANSLATORS
+    // ══════════════════════════════════════════════════
+    function renderAdminTranslators() {
+      return `
+        <div class="max-w-6xl mx-auto px-4 py-6">
+          <button onclick="navigate('admin-dashboard')" class="text-[12px] text-mute hover:text-ink transition-colors mb-4 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            管理トップへ
+          </button>
+          <div class="flex items-center justify-between mb-5">
+            <h1 class="font-bold text-[17px]">翻訳者管理</h1>
+            <span class="text-[12px] text-mute">${TRANSLATORS.length}名</span>
+          </div>
+          <div class="bg-white border border-line rounded-sm overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-line text-[11px] text-mute bg-bg/50">
+                  <th class="text-left py-2.5 px-4 font-medium">翻訳者</th>
+                  <th class="text-left py-2.5 px-4 font-medium">対応言語</th>
+                  <th class="text-left py-2.5 px-4 font-medium">評価</th>
+                  <th class="text-left py-2.5 px-4 font-medium">実績</th>
+                  <th class="text-left py-2.5 px-4 font-medium">担当中</th>
+                  <th class="text-left py-2.5 px-4 font-medium">ステータス</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${TRANSLATORS.map(t => {
+                  const activeJobs = translationOrders.filter(o => o.assignee === t.id && (o.status === 'in_progress' || o.status === 'review'));
+                  const completedJobs = translationOrders.filter(o => o.assignee === t.id && o.status === 'completed');
+                  return `
+                  <tr class="border-b border-line/60 last:border-0">
+                    <td class="py-3 px-4">
+                      <p class="text-[12px] font-medium">${t.name}</p>
+                      <p class="text-[11px] text-mute">${t.nameEn}</p>
+                    </td>
+                    <td class="py-3 px-4">
+                      <div class="flex gap-1 flex-wrap">${t.langs.map(l => `<span class="text-[10px] px-1.5 py-0.5 bg-ink/5 text-sub">${langCode(l)}</span>`).join('')}</div>
+                    </td>
+                    <td class="py-3 px-4 text-[12px]">${t.rating} ★</td>
+                    <td class="py-3 px-4 text-[12px] text-sub">${t.jobs}件（+${completedJobs.length}）</td>
+                    <td class="py-3 px-4 text-[12px] font-medium">${activeJobs.length}件</td>
+                    <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 border font-medium ${t.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}">${t.status === 'active' ? '稼働中' : '休止中'}</span></td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  ADMIN CLIENTS
+    // ══════════════════════════════════════════════════
+    function renderAdminClients() {
+      const clients = [
+        { name: 'トヨタ自動車株式会社', nameEn: 'Toyota Motor Corporation', plan: 'Enterprise', releases: 10, orders: 8, joined: '2025/06/01', status: 'active' },
+        { name: '株式会社ソニーグループ', nameEn: 'Sony Group Corporation', plan: 'Business', releases: 4, orders: 6, joined: '2025/09/15', status: 'active' },
+        { name: '株式会社メルカリ', nameEn: 'Mercari, Inc.', plan: 'Starter', releases: 2, orders: 3, joined: '2026/01/10', status: 'active' },
+        { name: 'パナソニック株式会社', nameEn: 'Panasonic Corporation', plan: 'Business', releases: 5, orders: 4, joined: '2025/11/20', status: 'active' },
+        { name: '株式会社任天堂', nameEn: 'Nintendo Co., Ltd.', plan: 'Enterprise', releases: 3, orders: 5, joined: '2025/08/01', status: 'paused' },
+      ];
+
+      const planColor = { Enterprise: 'bg-brand/10 text-brand border-brand/20', Business: 'bg-blue-50 text-blue-700 border-blue-200', Starter: 'bg-ink/5 text-sub border-line' };
+
+      return `
+        <div class="max-w-6xl mx-auto px-4 py-6">
+          <button onclick="navigate('admin-dashboard')" class="text-[12px] text-mute hover:text-ink transition-colors mb-4 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            管理トップへ
+          </button>
+          <div class="flex items-center justify-between mb-5">
+            <h1 class="font-bold text-[17px]">事業者管理</h1>
+            <span class="text-[12px] text-mute">${clients.length}社</span>
+          </div>
+          <div class="bg-white border border-line rounded-sm overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-line text-[11px] text-mute bg-bg/50">
+                  <th class="text-left py-2.5 px-4 font-medium">企業名</th>
+                  <th class="text-left py-2.5 px-4 font-medium">プラン</th>
+                  <th class="text-left py-2.5 px-4 font-medium">リリース数</th>
+                  <th class="text-left py-2.5 px-4 font-medium">翻訳発注</th>
+                  <th class="text-left py-2.5 px-4 font-medium">登録日</th>
+                  <th class="text-left py-2.5 px-4 font-medium">ステータス</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${clients.map(c => `
+                  <tr class="border-b border-line/60 last:border-0">
+                    <td class="py-3 px-4">
+                      <p class="text-[12px] font-medium">${c.name}</p>
+                      <p class="text-[11px] text-mute">${c.nameEn}</p>
+                    </td>
+                    <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 border font-medium ${planColor[c.plan] || ''}">${c.plan}</span></td>
+                    <td class="py-3 px-4 text-[12px] text-sub">${c.releases}件</td>
+                    <td class="py-3 px-4 text-[12px] text-sub">${c.orders}件</td>
+                    <td class="py-3 px-4 text-[12px] text-mute">${c.joined}</td>
+                    <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 border font-medium ${c.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}">${c.status === 'active' ? '利用中' : '休止中'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    render();
+  </script>
+</body>
+</html>
