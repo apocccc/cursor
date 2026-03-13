@@ -256,19 +256,58 @@
     function doLogout() {
       currentUser = null;
       sessionStorage.removeItem('aw_user');
-      navigate('home');
+      navigate('home', {}, true);
     }
 
     function requireAuth(roles) {
-      if (!currentUser) { navigate('login'); return false; }
-      if (roles && !roles.includes(currentUser.role)) { navigate('login'); return false; }
+      if (!currentUser) { navigate('login', {}, true); return false; }
+      if (roles && !roles.includes(currentUser.role)) { navigate('login', {}, true); return false; }
       return true;
     }
 
-    let currentPage = currentUser ? (currentUser.role === 'translator' ? 'trans-dashboard' : currentUser.role === 'admin' ? 'admin-dashboard' : 'home') : 'home';
-    let currentParams = {};
+    // ══════════════════════════════════════════════════
+    //  URL ROUTING (History API)
+    // ══════════════════════════════════════════════════
+    const PAGE_TO_PATH = {
+      home: '/', login: '/login', register: '/register',
+      dashboard: '/dashboard', 'dash-new': '/dashboard/new', 'dash-analytics': '/dashboard/analytics', 'dash-detail': '/dashboard/detail',
+      press: '/press', company: '/company', categories: '/categories',
+      'trans-dashboard': '/translator', 'trans-work': '/translator/work',
+      'admin-dashboard': '/admin', 'admin-orders': '/admin/orders', 'admin-translators': '/admin/translators', 'admin-clients': '/admin/clients', 'admin-order-detail': '/admin/order',
+    };
+    const PATH_TO_PAGE = Object.fromEntries(Object.entries(PAGE_TO_PATH).map(([k, v]) => [v, k]));
+
+    function pathToPage(pathname) {
+      return PATH_TO_PAGE[pathname] || PATH_TO_PAGE[pathname.replace(/\/$/, '')] || 'home';
+    }
+
+    function pageToUrl(page, params = {}) {
+      let path = PAGE_TO_PATH[page] || '/';
+      const qs = new URLSearchParams();
+      if (params.id) qs.set('id', params.id);
+      if (params.idx !== undefined) qs.set('idx', params.idx);
+      if (params.orderId) qs.set('orderId', params.orderId);
+      if (params.category) qs.set('category', params.category);
+      const query = qs.toString();
+      return query ? `${path}?${query}` : path;
+    }
+
+    function parseUrlParams() {
+      const sp = new URLSearchParams(location.search);
+      const params = {};
+      if (sp.has('id')) params.id = sp.get('id');
+      if (sp.has('idx')) params.idx = parseInt(sp.get('idx'), 10);
+      if (sp.has('orderId')) params.orderId = sp.get('orderId');
+      if (sp.has('category')) params.category = sp.get('category');
+      return params;
+    }
+
+    // Determine initial page from URL
     let searchQuery = '';
     let selectedCategory = '';
+    let currentPage = pathToPage(location.pathname);
+    let currentParams = parseUrlParams();
+    if (currentParams.category) selectedCategory = currentParams.category;
     let myReleases = [
       { title: '新型燃料電池車「MIRAI NEXT」を2026年秋に全世界同時発売', summary: '次世代FCスタック搭載で航続距離1,000km超を実現。北米・欧州・アジアで同時ローンチ。', status: 'published', date: '2026/03/12', langs: ['日本語', 'English', '中文'], regions: ['na', 'eu', 'asia'], categoryId: 'manufacturing',
         body: '■ 概要\n新型MIRAI NEXTは、第3世代FCスタックを搭載し航続距離1,000kmを実現。\n\n■ 主な特徴\n・航続距離：1,050km（WLTCモード）\n・水素充填時間：約3分\n・新開発の軽量カーボンタンク採用\n・OTAアップデート対応',
@@ -352,15 +391,31 @@
       return `<div class="${size} bg-ink/8 text-ink/50 flex items-center justify-center font-bold flex-shrink-0 rounded-sm">${company.logo}</div>`;
     }
 
-    function navigate(page, params = {}) {
+    function navigate(page, params = {}, replace = false) {
       currentPage = page;
       currentParams = params;
       if (page === 'home' && params.category) selectedCategory = params.category;
       else if (page === 'home') selectedCategory = '';
+      const url = pageToUrl(page, params);
+      if (replace) history.replaceState({ page, params }, '', url);
+      else history.pushState({ page, params }, '', url);
       render();
       window.scrollTo({ top: 0 });
       document.getElementById('mobile-menu')?.classList.add('hidden');
     }
+
+    window.addEventListener('popstate', (e) => {
+      if (e.state) {
+        currentPage = e.state.page || 'home';
+        currentParams = e.state.params || {};
+      } else {
+        currentPage = pathToPage(location.pathname);
+        currentParams = parseUrlParams();
+      }
+      if (currentParams.category) selectedCategory = currentParams.category;
+      else selectedCategory = '';
+      render();
+    });
 
     function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
 
@@ -2582,6 +2637,8 @@
         </div>`;
     }
 
+    // Set initial state
+    history.replaceState({ page: currentPage, params: currentParams }, '', pageToUrl(currentPage, currentParams));
     render();
   </script>
 </body>
