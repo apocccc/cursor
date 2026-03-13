@@ -146,6 +146,7 @@
     ];
 
     let currentUser = JSON.parse(sessionStorage.getItem('aw_user') || 'null');
+    let authToken = sessionStorage.getItem('aw_token') || '';
     let loginError = '';
     let loginStep = 'email'; // 'email' | 'code'
     let loginEmail = '';
@@ -153,15 +154,44 @@
     let otpExpiresAt = 0;
     let loginSending = false;
 
-    function doLogin(email, password) {
-      const user = USERS.find(u => u.email === email && u.password === password);
-      if (!user) { loginError = 'メールアドレスまたはパスワードが正しくありません'; render(); return; }
+    function setSession(user, token) {
       currentUser = user;
+      authToken = token || '';
       sessionStorage.setItem('aw_user', JSON.stringify(user));
+      if (token) sessionStorage.setItem('aw_token', token);
+    }
+
+    function clearSession() {
+      currentUser = null;
+      authToken = '';
+      sessionStorage.removeItem('aw_user');
+      sessionStorage.removeItem('aw_token');
+    }
+
+    async function doLogin(email, password) {
+      if (!email || !password) { loginError = 'メールアドレスとパスワードを入力してください'; render(); return; }
+      loginSending = true;
       loginError = '';
-      if (user.role === 'translator') navigate('trans-dashboard');
-      else if (user.role === 'admin') navigate('admin-dashboard');
-      else navigate('dashboard');
+      render();
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'ログインに失敗しました');
+        setSession(data.user, data.token);
+        loginError = '';
+        if (data.user.role === 'translator') navigate('trans-dashboard');
+        else if (data.user.role === 'admin') navigate('admin-dashboard');
+        else navigate('dashboard');
+        return;
+      } catch (e) {
+        loginError = e.message || 'ログインに失敗しました';
+      }
+      loginSending = false;
+      render();
     }
 
     async function sendOtpCode() {
@@ -204,18 +234,11 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '認証失敗');
-        // Code verified — find or create user and log in
-        let user = USERS.find(u => u.email === loginEmail);
-        if (!user) {
-          user = { id: 'u' + (USERS.length + 1), email: loginEmail, password: '', role: 'client', name: loginEmail.split('@')[0], company: null, translatorId: null };
-          USERS.push(user);
-        }
-        currentUser = user;
-        sessionStorage.setItem('aw_user', JSON.stringify(user));
+        setSession(data.user, data.token);
         loginStep = 'email';
         loginError = '';
-        if (user.role === 'translator') navigate('trans-dashboard');
-        else if (user.role === 'admin') navigate('admin-dashboard');
+        if (data.user.role === 'translator') navigate('trans-dashboard');
+        else if (data.user.role === 'admin') navigate('admin-dashboard');
         else navigate('dashboard');
         return;
       } catch (e) {
@@ -235,8 +258,14 @@
     }
 
     function doLogout() {
-      currentUser = null;
-      sessionStorage.removeItem('aw_user');
+      // Delete session on server (fire-and-forget)
+      if (authToken) {
+        fetch('/api/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+        }).catch(() => {});
+      }
+      clearSession();
       navigate('home', {}, true);
     }
 
@@ -859,7 +888,9 @@
                   <label class="flex items-center gap-1.5 text-sub cursor-pointer"><input type="checkbox" class="rounded-sm"> ログイン状態を保持</label>
                   <a href="#" class="text-brand hover:underline">パスワードを忘れた方</a>
                 </div>
-                <button id="login-btn" onclick="doLogin(document.getElementById('login-email').value, document.getElementById('login-password').value)" class="w-full bg-ink text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-ink/80 transition-colors mt-2">ログイン</button>
+                <button id="login-btn" onclick="doLogin(document.getElementById('login-email').value, document.getElementById('login-password').value)" class="w-full bg-ink text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-ink/80 transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed" ${loginSending ? 'disabled' : ''}>
+                  ${loginSending ? '<span class="spinner mr-2"></span>ログイン中...' : 'ログイン'}
+                </button>
               </div>
             </div>
 
@@ -1012,15 +1043,10 @@
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name: last + ' ' + first, company: company || undefined }),
+          body: JSON.stringify({ email, password: pw, name: last + ' ' + first, company: company || undefined }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '登録に失敗しました');
-
-        // Also store locally so password login works after email verification
-        if (!USERS.find(u => u.email === email)) {
-          USERS.push({ id: 'u' + (USERS.length + 1), email, password: pw, role: 'client', name: last + ' ' + first, company: company || null, translatorId: null });
-        }
 
         registeredEmail = email;
         registerStep = 'sent';
@@ -2674,9 +2700,27 @@
         </div>`;
     }
 
+    // Restore session from token on page load
+    async function restoreSession() {
+      if (!authToken) return;
+      try {
+        const res = await fetch('/api/me', {
+          headers: { 'Authorization': 'Bearer ' + authToken },
+        });
+        if (!res.ok) { clearSession(); return; }
+        const data = await res.json();
+        currentUser = data.user;
+        sessionStorage.setItem('aw_user', JSON.stringify(data.user));
+      } catch {
+        // Keep cached user if network fails
+      }
+    }
+
     // Set initial state
     history.replaceState({ page: currentPage, params: currentParams }, '', pageToUrl(currentPage, currentParams));
     render();
+    // Verify session in background (non-blocking)
+    restoreSession().then(() => render());
   </script>
 </body>
 </html>

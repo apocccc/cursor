@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 import crypto from "node:crypto";
+import bcrypt from "bcryptjs";
+import { supabase } from "./supabase.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const SECRET = process.env.OTP_SECRET || process.env.RESEND_API_KEY;
@@ -12,28 +14,75 @@ function signToken(email, expiresAt) {
     .digest("hex");
 }
 
-export default async function handler(req, res) {
+function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+export default async function handler(req, res) {
+  cors(res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, name, company } = req.body || {};
+  const { email, password, name, company } = req.body || {};
 
   if (!email || typeof email !== "string" || !email.includes("@")) {
     return res.status(400).json({ error: "有効なメールアドレスを入力してください" });
   }
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: "パスワードは6文字以上で入力してください" });
+  }
 
+  const emailLower = email.toLowerCase().trim();
+
+  // Check if user already exists
+  const { data: existing } = await supabase
+    .from("users")
+    .select("id, email_verified")
+    .eq("email", emailLower)
+    .single();
+
+  if (existing && existing.email_verified) {
+    return res.status(409).json({ error: "このメールアドレスは既に登録されています" });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  if (existing && !existing.email_verified) {
+    // Update unverified user
+    const { error: updateErr } = await supabase
+      .from("users")
+      .update({ password_hash: passwordHash, name: name || "", company: company || "" })
+      .eq("id", existing.id);
+    if (updateErr) {
+      console.error("Supabase update error:", updateErr);
+      return res.status(500).json({ error: "登録に失敗しました" });
+    }
+  } else {
+    // Insert new user
+    const { error: insertErr } = await supabase.from("users").insert({
+      email: emailLower,
+      password_hash: passwordHash,
+      name: name || "",
+      company: company || "",
+      role: "client",
+    });
+    if (insertErr) {
+      console.error("Supabase insert error:", insertErr);
+      return res.status(500).json({ error: "登録に失敗しました" });
+    }
+  }
+
+  // Send verification email
   const expiresAt = Date.now() + TOKEN_TTL_MS;
-  const token = signToken(email.toLowerCase(), expiresAt);
+  const token = signToken(emailLower, expiresAt);
 
-  // Build verification URL — works on Vercel preview & production
   const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:3000";
   const protocol = req.headers["x-forwarded-proto"] || "https";
-  const verifyUrl = `${protocol}://${host}/api/verify-email?email=${encodeURIComponent(email)}&token=${token}&expires=${expiresAt}`;
+  const verifyUrl = `${protocol}://${host}/api/verify-email?email=${encodeURIComponent(emailLower)}&token=${token}&expires=${expiresAt}`;
 
   try {
     await resend.emails.send({

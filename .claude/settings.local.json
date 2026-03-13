@@ -12,7 +12,8 @@
       "Bash(git remote:*)",
       "Bash(git commit:*)",
       "Bash(wc -l /Users/alex/apocwire/index.html /Users/alex/apocwire/api/*.js)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

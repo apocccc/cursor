@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { supabase } from "./supabase.js";
 
 const SECRET = process.env.OTP_SECRET || process.env.RESEND_API_KEY;
 
@@ -9,7 +10,7 @@ function signToken(email, expiresAt) {
     .digest("hex");
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -25,14 +26,32 @@ export default function handler(req, res) {
     return sendHtml(res, 400, "expired", "認証リンクの有効期限が切れています。お手数ですが、再度会員登録を行ってください。");
   }
 
-  const expected = signToken(email.toLowerCase(), expiresAt);
-  const valid = crypto.timingSafeEqual(
-    Buffer.from(expected, "hex"),
-    Buffer.from(token, "hex")
-  );
+  const emailLower = email.toLowerCase().trim();
+  const expected = signToken(emailLower, expiresAt);
+
+  let valid = false;
+  try {
+    valid = crypto.timingSafeEqual(
+      Buffer.from(expected, "hex"),
+      Buffer.from(token, "hex")
+    );
+  } catch {
+    valid = false;
+  }
 
   if (!valid) {
     return sendHtml(res, 400, "invalid", "認証リンクが無効です。メール内のリンクをもう一度クリックしてください。");
+  }
+
+  // Update email_verified in Supabase
+  const { error } = await supabase
+    .from("users")
+    .update({ email_verified: true })
+    .eq("email", emailLower);
+
+  if (error) {
+    console.error("Supabase verify error:", error);
+    return sendHtml(res, 500, "error", "認証処理中にエラーが発生しました。しばらくしてから再度お試しください。");
   }
 
   return sendHtml(res, 200, "success", null);
