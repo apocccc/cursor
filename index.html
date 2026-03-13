@@ -166,6 +166,11 @@
 
     let currentUser = JSON.parse(sessionStorage.getItem('aw_user') || 'null');
     let loginError = '';
+    let loginStep = 'email'; // 'email' | 'code'
+    let loginEmail = '';
+    let otpHash = '';
+    let otpExpiresAt = 0;
+    let loginSending = false;
 
     function doLogin(email, password) {
       const user = USERS.find(u => u.email === email && u.password === password);
@@ -176,6 +181,76 @@
       if (user.role === 'translator') navigate('trans-dashboard');
       else if (user.role === 'admin') navigate('admin-dashboard');
       else navigate('dashboard');
+    }
+
+    async function sendOtpCode() {
+      const email = document.getElementById('login-email').value.trim();
+      if (!email || !email.includes('@')) { loginError = 'メールアドレスを入力してください'; render(); return; }
+      loginEmail = email;
+      loginError = '';
+      loginSending = true;
+      render();
+      try {
+        const res = await fetch('/api/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '送信失敗');
+        otpHash = data.hash;
+        otpExpiresAt = data.expiresAt;
+        loginStep = 'code';
+        loginError = '';
+      } catch (e) {
+        loginError = e.message || '認証コードの送信に失敗しました';
+      }
+      loginSending = false;
+      render();
+    }
+
+    async function verifyOtpCode() {
+      const code = document.getElementById('login-code').value.trim();
+      if (!code || code.length !== 6) { loginError = '6桁のコードを入力してください'; render(); return; }
+      loginSending = true;
+      loginError = '';
+      render();
+      try {
+        const res = await fetch('/api/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginEmail, code, hash: otpHash, expiresAt: otpExpiresAt }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '認証失敗');
+        // Code verified — find or create user and log in
+        let user = USERS.find(u => u.email === loginEmail);
+        if (!user) {
+          user = { id: 'u' + (USERS.length + 1), email: loginEmail, password: '', role: 'client', name: loginEmail.split('@')[0], company: null, translatorId: null };
+          USERS.push(user);
+        }
+        currentUser = user;
+        sessionStorage.setItem('aw_user', JSON.stringify(user));
+        loginStep = 'email';
+        loginError = '';
+        if (user.role === 'translator') navigate('trans-dashboard');
+        else if (user.role === 'admin') navigate('admin-dashboard');
+        else navigate('dashboard');
+        return;
+      } catch (e) {
+        loginError = e.message || '認証に失敗しました';
+      }
+      loginSending = false;
+      render();
+    }
+
+    function resetOtpLogin() {
+      loginStep = 'email';
+      loginEmail = '';
+      otpHash = '';
+      otpExpiresAt = 0;
+      loginError = '';
+      render();
     }
 
     function doLogout() {
@@ -620,11 +695,44 @@
       }
 
       const accountRows = [
-        { label: '事業者', icon: '🏢', accounts: USERS.filter(u => u.role === 'client') },
-        { label: '翻訳者', icon: '🌐', accounts: USERS.filter(u => u.role === 'translator') },
-        { label: 'APOC管理', icon: '🔒', accounts: USERS.filter(u => u.role === 'admin') },
+        { label: '事業者', accounts: USERS.filter(u => u.role === 'client') },
+        { label: '翻訳者', accounts: USERS.filter(u => u.role === 'translator') },
+        { label: 'APOC管理', accounts: USERS.filter(u => u.role === 'admin') },
       ];
 
+      // OTP step: code entry
+      if (loginStep === 'code') {
+        return `
+          <div class="max-w-sm mx-auto px-4 py-12">
+            <div class="text-center mb-8">
+              <div class="flex items-center justify-center gap-1.5 mb-4">
+                <span class="bg-brand text-white text-[11px] font-bold px-1.5 py-0.5 leading-none">AW</span>
+                <span class="text-[16px] font-bold">ApocWire</span>
+              </div>
+              <h1 class="font-bold text-[17px]">認証コードを入力</h1>
+              <p class="text-[12px] text-mute mt-1.5"><span class="text-sub font-medium">${loginEmail}</span> に6桁のコードを送信しました</p>
+            </div>
+            ${loginError ? `<div class="bg-red-50 border border-red-200 text-red-700 text-[12px] px-4 py-2.5 rounded-sm mb-4">${loginError}</div>` : ''}
+            <div class="bg-white border border-line rounded-sm p-6">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-[12px] text-sub mb-1.5">認証コード（6桁）</label>
+                  <input id="login-code" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" class="w-full px-3 py-3 border border-line rounded-sm text-[18px] text-center font-bold tracking-[6px] focus:border-ink/40 bg-white placeholder:text-ink/15 placeholder:tracking-[6px]" onkeydown="if(event.key==='Enter')document.getElementById('verify-btn').click()" ${loginSending ? 'disabled' : ''}>
+                </div>
+                <button id="verify-btn" onclick="verifyOtpCode()" class="w-full bg-brand text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed" ${loginSending ? 'disabled' : ''}>
+                  ${loginSending ? '<span class="spinner mr-2"></span>確認中...' : '認証する'}
+                </button>
+              </div>
+              <div class="mt-4 pt-4 border-t border-line flex items-center justify-between text-[12px]">
+                <button onclick="resetOtpLogin()" class="text-mute hover:text-ink transition-colors">← メールアドレスを変更</button>
+                <button onclick="sendOtpCode()" class="text-brand hover:underline" ${loginSending ? 'disabled' : ''}>コードを再送信</button>
+              </div>
+            </div>
+            <p class="text-[11px] text-mute text-center mt-4">コードは5分間有効です</p>
+          </div>`;
+      }
+
+      // Default step: email + password / OTP toggle
       return `
         <div class="max-w-2xl mx-auto px-4 py-12">
           <div class="text-center mb-8">
@@ -637,7 +745,15 @@
 
           <div class="max-w-sm mx-auto">
             ${loginError ? `<div class="bg-red-50 border border-red-200 text-red-700 text-[12px] px-4 py-2.5 rounded-sm mb-4">${loginError}</div>` : ''}
-            <div class="bg-white border border-line rounded-sm p-6">
+
+            <!-- Tab: password / code -->
+            <div class="flex border-b border-line mb-0">
+              <button id="tab-pw" onclick="document.getElementById('form-pw').classList.remove('hidden'); document.getElementById('form-otp').classList.add('hidden'); this.className='flex-1 py-2.5 text-[13px] font-medium tab-active'; document.getElementById('tab-otp').className='flex-1 py-2.5 text-[13px] font-medium tab-inactive';" class="flex-1 py-2.5 text-[13px] font-medium tab-active">パスワードでログイン</button>
+              <button id="tab-otp" onclick="document.getElementById('form-otp').classList.remove('hidden'); document.getElementById('form-pw').classList.add('hidden'); this.className='flex-1 py-2.5 text-[13px] font-medium tab-active'; document.getElementById('tab-pw').className='flex-1 py-2.5 text-[13px] font-medium tab-inactive';" class="flex-1 py-2.5 text-[13px] font-medium tab-inactive">メールで認証コード</button>
+            </div>
+
+            <!-- Password form -->
+            <div id="form-pw" class="bg-white border border-line border-t-0 rounded-b-sm p-6">
               <div class="space-y-4">
                 <div><label class="block text-[12px] text-sub mb-1.5">メールアドレス</label><input id="login-email" type="email" placeholder="mail@example.com" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20" onkeydown="if(event.key==='Enter')document.getElementById('login-btn').click()"></div>
                 <div><label class="block text-[12px] text-sub mb-1.5">パスワード</label><input id="login-password" type="password" placeholder="パスワード" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20" onkeydown="if(event.key==='Enter')document.getElementById('login-btn').click()"></div>
@@ -647,6 +763,20 @@
                 </div>
                 <button id="login-btn" onclick="doLogin(document.getElementById('login-email').value, document.getElementById('login-password').value)" class="w-full bg-ink text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-ink/80 transition-colors mt-2">ログイン</button>
               </div>
+            </div>
+
+            <!-- OTP form -->
+            <div id="form-otp" class="bg-white border border-line border-t-0 rounded-b-sm p-6 hidden">
+              <div class="space-y-4">
+                <div><label class="block text-[12px] text-sub mb-1.5">メールアドレス</label><input id="login-email-otp" type="email" placeholder="mail@example.com" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white placeholder:text-ink/20" onkeydown="if(event.key==='Enter')document.getElementById('send-code-btn').click()"></div>
+                <button id="send-code-btn" onclick="document.getElementById('login-email').value = document.getElementById('login-email-otp').value; sendOtpCode()" class="w-full bg-brand text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed" ${loginSending ? 'disabled' : ''}>
+                  ${loginSending ? '<span class="spinner mr-2"></span>送信中...' : '認証コードを送信'}
+                </button>
+                <p class="text-[11px] text-mute">入力したメールアドレスに6桁の認証コードを送信します</p>
+              </div>
+            </div>
+
+            <div class="bg-white border border-line border-t-0 rounded-b-sm px-6 pb-6">
               <div class="relative my-5"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-line"></div></div><div class="relative flex justify-center"><span class="bg-white px-3 text-[11px] text-mute">または</span></div></div>
               <button class="w-full border border-line py-2.5 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -656,16 +786,16 @@
 
             <p class="text-[12px] text-mute text-center mt-5">アカウントをお持ちでない方は <a href="#" onclick="event.preventDefault();navigate('register')" class="text-brand hover:underline">新規会員登録</a></p>
 
-            <!-- Test accounts -->
+            <!-- Test accounts (password login) -->
             <div class="mt-8 border-t border-line pt-6">
-              <p class="text-[11px] text-mute text-center mb-3">テストアカウント（クリックで自動入力）</p>
+              <p class="text-[11px] text-mute text-center mb-3">テストアカウント（クリックで自動入力 / パスワード用）</p>
               <div class="space-y-3">
                 ${accountRows.map(group => `
                   <div>
-                    <p class="text-[10px] text-mute font-medium mb-1.5">${group.icon} ${group.label}</p>
+                    <p class="text-[10px] text-mute font-medium mb-1.5">${group.label}</p>
                     <div class="space-y-1">
                       ${group.accounts.map(u => `
-                        <button onclick="document.getElementById('login-email').value='${u.email}'; document.getElementById('login-password').value='${u.password}';" class="w-full text-left px-3 py-2 bg-white border border-line rounded-sm hover:border-ink/30 transition-colors group">
+                        <button onclick="document.getElementById('login-email').value='${u.email}'; document.getElementById('login-password').value='${u.password}'; document.getElementById('tab-pw').click();" class="w-full text-left px-3 py-2 bg-white border border-line rounded-sm hover:border-ink/30 transition-colors group">
                           <div class="flex items-center justify-between">
                             <div>
                               <span class="text-[12px] font-medium group-hover:text-brand transition-colors">${u.name}</span>
