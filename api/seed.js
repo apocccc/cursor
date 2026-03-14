@@ -15,37 +15,33 @@ export default async function handler(req, res) {
   const results = [];
 
   for (const u of SEED_USERS) {
-    // Check if already exists
-    const { data: existing } = await supabase
-      .from("users")
-      .select("id, email, role")
-      .eq("email", u.email)
-      .single();
+    try {
+      const passwordHash = await bcrypt.hash(u.password, 10);
 
-    if (existing) {
-      // Update role and verify
-      await supabase
-        .from("users")
-        .update({ role: u.role, email_verified: true, name: u.name, company: u.company })
-        .eq("id", existing.id);
-      results.push({ email: u.email, status: "updated", role: u.role });
-      continue;
-    }
+      // Delete existing user first (clean slate)
+      await supabase.from("sessions").delete().in(
+        "user_id",
+        (await supabase.from("users").select("id").eq("email", u.email)).data?.map(r => r.id) || []
+      );
+      await supabase.from("users").delete().eq("email", u.email);
 
-    const passwordHash = await bcrypt.hash(u.password, 10);
-    const { error } = await supabase.from("users").insert({
-      email: u.email,
-      password_hash: passwordHash,
-      name: u.name,
-      company: u.company,
-      role: u.role,
-      email_verified: true,
-    });
+      // Insert fresh
+      const { data, error } = await supabase.from("users").insert({
+        email: u.email,
+        password_hash: passwordHash,
+        name: u.name,
+        company: u.company,
+        role: u.role,
+        email_verified: true,
+      }).select("id, email, role").single();
 
-    if (error) {
-      results.push({ email: u.email, status: "error", error: error.message });
-    } else {
-      results.push({ email: u.email, status: "created", role: u.role });
+      if (error) {
+        results.push({ email: u.email, status: "error", error: error.message });
+      } else {
+        results.push({ email: u.email, status: "created", role: data.role, id: data.id });
+      }
+    } catch (err) {
+      results.push({ email: u.email, status: "exception", error: err.message });
     }
   }
 
