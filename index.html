@@ -829,9 +829,9 @@
       }
 
       const accountRows = [
-        { label: '事業者', accounts: USERS.filter(u => u.role === 'client') },
-        { label: '翻訳者', accounts: USERS.filter(u => u.role === 'translator') },
-        { label: 'APOC管理', accounts: USERS.filter(u => u.role === 'admin') },
+        { label: '事業者', accounts: [{ email: 'client@apoc.co.jp', password: 'client123', name: '鈴木 一郎', company: 'トヨタ自動車株式会社' }] },
+        { label: '翻訳者', accounts: [{ email: 'translator@apoc.co.jp', password: 'trans123', name: '田中 美咲', company: '' }] },
+        { label: 'APOC管理', accounts: [{ email: 'admin@apoc.co.jp', password: 'admin123', name: '山田 太郎', company: '株式会社APOC' }] },
       ];
 
       // OTP step: code entry
