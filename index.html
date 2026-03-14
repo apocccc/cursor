@@ -93,6 +93,8 @@
           <a href="#" onclick="navigate('admin-orders')" class="text-white/50 hover:text-white">翻訳案件</a>
           <a href="#" onclick="navigate('admin-translators')" class="text-white/50 hover:text-white">翻訳者管理</a>
           <a href="#" onclick="navigate('admin-clients')" class="text-white/50 hover:text-white">事業者管理</a>
+          <a href="#" onclick="navigate('admin-dist-orders')" class="text-white/50 hover:text-white">発注管理</a>
+          <a href="#" onclick="navigate('admin-options')" class="text-white/50 hover:text-white">オプション管理</a>
         </nav>
       </div>
       <div class="flex items-center gap-3">
@@ -280,10 +282,10 @@
     // ══════════════════════════════════════════════════
     const PAGE_TO_PATH = {
       home: '/', login: '/login', register: '/register',
-      dashboard: '/dashboard', 'dash-new': '/dashboard/new', 'dash-analytics': '/dashboard/analytics', 'dash-detail': '/dashboard/detail',
+      dashboard: '/dashboard', 'dash-new': '/dashboard/new', 'dash-analytics': '/dashboard/analytics', 'dash-detail': '/dashboard/detail', 'dash-order': '/dashboard/order',
       press: '/press', company: '/company', categories: '/categories',
       'trans-dashboard': '/translator', 'trans-work': '/translator/work',
-      'admin-dashboard': '/admin', 'admin-orders': '/admin/orders', 'admin-translators': '/admin/translators', 'admin-clients': '/admin/clients', 'admin-order-detail': '/admin/order',
+      'admin-dashboard': '/admin', 'admin-orders': '/admin/orders', 'admin-translators': '/admin/translators', 'admin-clients': '/admin/clients', 'admin-order-detail': '/admin/order', 'admin-options': '/admin/options', 'admin-dist-orders': '/admin/dist-orders',
     };
     const PATH_TO_PAGE = Object.fromEntries(Object.entries(PAGE_TO_PATH).map(([k, v]) => [v, k]));
 
@@ -514,6 +516,7 @@
           </div>
           <nav class="flex-1 px-3 py-4 space-y-0.5">
             ${menuItem('dashboard', 'ダッシュボード', '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>')}
+            ${menuItem('dash-order', '発注', '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>')}
             ${menuItem('dash-new', '新規作成', '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>')}
             ${menuItem('dash-analytics', '分析', '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>')}
           </nav>
@@ -544,9 +547,9 @@
 
     function render() {
       const app = document.getElementById('app');
-      const dashPages = ['dashboard', 'dash-new', 'dash-analytics', 'dash-detail'];
+      const dashPages = ['dashboard', 'dash-new', 'dash-analytics', 'dash-detail', 'dash-order'];
       const transPages = ['trans-dashboard', 'trans-work'];
-      const adminPages = ['admin-dashboard', 'admin-orders', 'admin-translators', 'admin-clients', 'admin-order-detail'];
+      const adminPages = ['admin-dashboard', 'admin-orders', 'admin-translators', 'admin-clients', 'admin-order-detail', 'admin-options', 'admin-dist-orders'];
 
       // Route guards — redirect to login if not authenticated or wrong role
       if (dashPages.includes(currentPage) && !requireAuth(['client'])) return;
@@ -571,6 +574,7 @@
         case 'dash-new': content = renderDashNew(); break;
         case 'dash-analytics': content = renderDashAnalytics(); break;
         case 'dash-detail': content = renderDashDetail(); break;
+        case 'dash-order': content = renderDashOrder(); break;
         case 'trans-dashboard': content = renderTransDashboard(); break;
         case 'trans-work': content = renderTransWork(); break;
         case 'admin-dashboard': content = renderAdminDashboard(); break;
@@ -578,6 +582,8 @@
         case 'admin-translators': content = renderAdminTranslators(); break;
         case 'admin-clients': content = renderAdminClients(); break;
         case 'admin-order-detail': content = renderAdminOrderDetail(); break;
+        case 'admin-options': content = renderAdminOptions(); break;
+        case 'admin-dist-orders': content = renderAdminOrdersList(); break;
         default: content = renderHome();
       }
 
@@ -585,6 +591,7 @@
       if (dashPages.includes(currentPage)) {
         app.innerHTML = wrapDashLayout(content);
         if (currentPage === 'dash-analytics') initCharts();
+        if (currentPage === 'dash-order' && orderStep === 1) loadStep1Options();
       } else {
         app.innerHTML = content;
       }
@@ -2694,6 +2701,539 @@
                     <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 border font-medium ${c.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}">${c.status === 'active' ? '利用中' : '休止中'}</span></td>
                   </tr>
                 `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  DASH ORDER (3-step order form)
+    // ══════════════════════════════════════════════════
+    let orderStep = 1;
+    let orderOptions = [];
+    let orderSelectedCountries = [];
+    let orderSelectedOptions = [];
+    let orderSelectedCategories = [];
+    let orderSending = false;
+    let orderError = '';
+    let orderComplete = false;
+    let orderSnsConsent = false;
+    let showOrderConfirm = false;
+
+    const ORDER_CATEGORIES = [
+      { id: 'it', name: 'IT・テクノロジー' },
+      { id: 'manufacturing', name: '製造・メーカー' },
+      { id: 'food', name: '食品・飲料' },
+      { id: 'entertainment', name: 'エンタメ・レジャー' },
+      { id: 'finance', name: '金融・保険' },
+      { id: 'healthcare', name: '医療・ヘルスケア' },
+      { id: 'education', name: '教育' },
+      { id: 'realestate', name: '不動産' },
+      { id: 'retail', name: '小売・EC' },
+      { id: 'energy', name: 'エネルギー・環境' },
+      { id: 'automotive', name: '自動車・モビリティ' },
+      { id: 'travel', name: '旅行・観光' },
+    ];
+
+    const ORDER_COUNTRIES = [
+      { id: 'us', name: 'アメリカ', flag: '🇺🇸' },
+      { id: 'gb', name: 'イギリス', flag: '🇬🇧' },
+      { id: 'de', name: 'ドイツ', flag: '🇩🇪' },
+      { id: 'fr', name: 'フランス', flag: '🇫🇷' },
+      { id: 'cn', name: '中国', flag: '🇨🇳' },
+      { id: 'kr', name: '韓国', flag: '🇰🇷' },
+      { id: 'tw', name: '台湾', flag: '🇹🇼' },
+      { id: 'sg', name: 'シンガポール', flag: '🇸🇬' },
+      { id: 'th', name: 'タイ', flag: '🇹🇭' },
+      { id: 'vn', name: 'ベトナム', flag: '🇻🇳' },
+      { id: 'id', name: 'インドネシア', flag: '🇮🇩' },
+      { id: 'in', name: 'インド', flag: '🇮🇳' },
+      { id: 'au', name: 'オーストラリア', flag: '🇦🇺' },
+      { id: 'br', name: 'ブラジル', flag: '🇧🇷' },
+      { id: 'mx', name: 'メキシコ', flag: '🇲🇽' },
+    ];
+
+    async function loadOrderOptions() {
+      if (orderOptions.length) return;
+      try {
+        const res = await fetch('/api/options');
+        const data = await res.json();
+        if (data.options) orderOptions = data.options;
+      } catch (e) { console.error('Failed to load options:', e); }
+    }
+
+    function calcOrderPrice() {
+      const countryCount = orderSelectedCountries.length;
+      const base = countryCount * 50000;
+      let optionTotal = 0;
+      orderSelectedOptions.forEach(optId => {
+        const opt = orderOptions.find(o => o.id === optId);
+        if (!opt) return;
+        if (opt.price_rule === 'per_country') optionTotal += opt.price * countryCount;
+        else optionTotal += opt.price;
+      });
+      return { base, optionTotal, total: base + optionTotal };
+    }
+
+    function toggleOrderCountry(id) {
+      const idx = orderSelectedCountries.indexOf(id);
+      if (idx >= 0) orderSelectedCountries.splice(idx, 1);
+      else orderSelectedCountries.push(id);
+      render();
+    }
+
+    function toggleOrderOption(id) {
+      const idx = orderSelectedOptions.indexOf(id);
+      if (idx >= 0) orderSelectedOptions.splice(idx, 1);
+      else orderSelectedOptions.push(id);
+      render();
+    }
+
+    function toggleOrderCategory(id) {
+      const idx = orderSelectedCategories.indexOf(id);
+      if (idx >= 0) {
+        orderSelectedCategories.splice(idx, 1);
+      } else if (orderSelectedCategories.length < 5) {
+        orderSelectedCategories.push(id);
+      }
+      render();
+    }
+
+    function goOrderStep(step) {
+      if (step === 2) loadOrderOptions().then(() => { orderStep = 2; render(); });
+      else { orderStep = step; render(); }
+    }
+
+    function showConfirmPopup() {
+      const company = document.getElementById('order-company')?.value?.trim();
+      const contact = document.getElementById('order-contact')?.value?.trim();
+      const email = document.getElementById('order-email')?.value?.trim();
+      if (!company) { orderError = '企業名を入力してください'; render(); return; }
+      if (!contact) { orderError = '担当者名を入力してください'; render(); return; }
+      if (!email || !email.includes('@')) { orderError = 'メールアドレスを入力してください'; render(); return; }
+      if (!orderSelectedCountries.length) { orderError = '配信先を1つ以上選択してください'; render(); return; }
+      if (!orderSelectedCategories.length) { orderError = 'カテゴリーを1つ以上選択してください'; render(); return; }
+      if (!orderSnsConsent) { orderError = 'SNSキャンペーンへの参加に同意してください'; render(); return; }
+      orderError = '';
+      showOrderConfirm = true;
+      render();
+    }
+
+    async function submitOrder() {
+      const cancelAgree = document.getElementById('cancel-agree')?.checked;
+      if (!cancelAgree) { orderError = 'キャンセルポリシーに同意してください'; render(); return; }
+
+      orderSending = true;
+      orderError = '';
+      render();
+
+      const price = calcOrderPrice();
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({
+            categories: orderSelectedCategories,
+            countries: orderSelectedCountries,
+            company_name: document.getElementById('order-company').value.trim(),
+            contact_name: document.getElementById('order-contact').value.trim(),
+            email: document.getElementById('order-email').value.trim(),
+            phone: document.getElementById('order-phone')?.value?.trim() || '',
+            selected_options: orderSelectedOptions,
+            base_price: price.base,
+            total_price: price.total,
+            sns_consent: orderSnsConsent,
+            cancel_consent: true,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '発注に失敗しました');
+        orderComplete = true;
+        showOrderConfirm = false;
+      } catch (e) {
+        orderError = e.message;
+      }
+      orderSending = false;
+      render();
+    }
+
+    function resetOrder() {
+      orderStep = 1; orderSelectedCountries = []; orderSelectedOptions = []; orderSelectedCategories = [];
+      orderSending = false; orderError = ''; orderComplete = false; orderSnsConsent = false; showOrderConfirm = false;
+      render();
+    }
+
+    function renderDashOrder() {
+      if (orderComplete) {
+        return `
+          <div class="px-8 py-12 max-w-lg">
+            <div class="text-center">
+              <div class="w-16 h-16 mx-auto mb-5 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <h1 class="font-bold text-[20px] mb-2">発注が完了しました</h1>
+              <p class="text-[13px] text-sub mb-1">確認メールをお送りしました。</p>
+              <p class="text-[13px] text-sub mb-6">担当者より改めてご連絡いたします。</p>
+              <button onclick="resetOrder(); navigate('dashboard')" class="bg-ink text-white px-6 py-2.5 rounded-sm text-[13px] font-medium hover:bg-ink/80 transition-colors">ダッシュボードへ戻る</button>
+            </div>
+          </div>`;
+      }
+
+      const price = calcOrderPrice();
+      const fmtPrice = (n) => (n < 0 ? '-¥' + Math.abs(n).toLocaleString() : '¥' + n.toLocaleString());
+
+      // Step indicator
+      const stepIndicator = `
+        <div class="flex items-center gap-3 mb-6">
+          ${[1,2,3].map(s => `
+            <div class="flex items-center gap-2 ${s <= orderStep ? '' : 'opacity-40'}">
+              <span class="w-6 h-6 flex items-center justify-center rounded-full text-[11px] font-bold ${s === orderStep ? 'bg-brand text-white' : s < orderStep ? 'bg-ink text-white' : 'bg-ink/10 text-sub'}">${s}</span>
+              <span class="text-[12px] font-medium ${s === orderStep ? 'text-ink' : 'text-mute'}">${s === 1 ? 'サービス概要' : s === 2 ? '発注情報' : '確認・発注'}</span>
+            </div>
+            ${s < 3 ? '<div class="flex-1 h-px bg-line"></div>' : ''}
+          `).join('')}
+        </div>`;
+
+      // Confirmation popup overlay
+      const confirmPopup = showOrderConfirm ? `
+        <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this){showOrderConfirm=false;render();}">
+          <div class="bg-white rounded-sm max-w-md w-full max-h-[80vh] overflow-y-auto p-6">
+            <h2 class="font-bold text-[16px] mb-4">発注内容の確認</h2>
+            <div class="space-y-3 text-[13px] mb-4">
+              <div class="flex justify-between py-2 border-b border-line"><span class="text-sub">カテゴリー</span><span class="font-medium text-right">${orderSelectedCategories.map(id => ORDER_CATEGORIES.find(c=>c.id===id)?.name).join('、')}</span></div>
+              <div class="flex justify-between py-2 border-b border-line"><span class="text-sub">配信先</span><span class="font-medium">${orderSelectedCountries.map(id => ORDER_COUNTRIES.find(c=>c.id===id)?.flag + ORDER_COUNTRIES.find(c=>c.id===id)?.name).join('、')}</span></div>
+              <div class="flex justify-between py-2 border-b border-line"><span class="text-sub">基本料金</span><span class="font-medium">${fmtPrice(price.base)}</span></div>
+              ${orderSelectedOptions.map(optId => {
+                const opt = orderOptions.find(o => o.id === optId);
+                if (!opt) return '';
+                const optPrice = opt.price_rule === 'per_country' ? opt.price * orderSelectedCountries.length : opt.price;
+                return `<div class="flex justify-between py-2 border-b border-line"><span class="text-sub">${opt.name}</span><span class="font-medium">${fmtPrice(optPrice)}</span></div>`;
+              }).join('')}
+              <div class="flex justify-between py-2 border-b border-line text-[14px]"><span class="font-bold">合計（税別）</span><span class="font-bold">${fmtPrice(price.total)}</span></div>
+              <div class="flex justify-between py-2"><span class="font-bold text-[14px]">合計（税込）</span><span class="font-bold text-brand text-[16px]">¥${Math.floor(price.total * 1.1).toLocaleString()}</span></div>
+            </div>
+            ${orderError ? `<div class="bg-red-50 border border-red-200 text-red-700 text-[12px] px-3 py-2 rounded-sm mb-3">${orderError}</div>` : ''}
+            <label class="flex items-start gap-2 text-[12px] text-sub cursor-pointer mb-4">
+              <input type="checkbox" id="cancel-agree" class="mt-0.5 rounded-sm">
+              <span>翻訳開始後のキャンセルには費用が発生することに同意します <span class="text-brand">*</span></span>
+            </label>
+            <div class="flex gap-3">
+              <button onclick="showOrderConfirm=false;render();" class="flex-1 border border-line py-2.5 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors">戻る</button>
+              <button onclick="submitOrder()" class="flex-1 bg-brand text-white py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors disabled:opacity-50" ${orderSending ? 'disabled' : ''}>
+                ${orderSending ? '<span class="spinner mr-1"></span>処理中...' : '発注を確定する'}
+              </button>
+            </div>
+          </div>
+        </div>` : '';
+
+      // STEP 1: Service overview
+      if (orderStep === 1) {
+        return `
+          <div class="px-8 py-6">
+            ${stepIndicator}
+            <h1 class="font-bold text-[17px] mb-5">プレスリリース海外配信サービス</h1>
+            <div class="bg-white border border-line rounded-sm p-6 mb-5">
+              <div class="flex items-baseline gap-2 mb-3">
+                <span class="text-[28px] font-bold text-brand">¥50,000</span>
+                <span class="text-[13px] text-sub">/ 1カ国（税別）〜</span>
+              </div>
+              <p class="text-[13px] text-sub mb-4">プレスリリースを翻訳し、各国の主要メディアに配信します。</p>
+              <div class="space-y-2 text-[13px]">
+                <div class="flex items-center gap-2"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>プロ翻訳者による高品質翻訳</div>
+                <div class="flex items-center gap-2"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>各国主要メディアへの配信</div>
+                <div class="flex items-center gap-2"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>配信レポート提供</div>
+                <div class="flex items-center gap-2"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>15カ国対応</div>
+              </div>
+            </div>
+            <h2 class="font-bold text-[14px] mb-3">利用可能なオプション</h2>
+            <div class="bg-white border border-line rounded-sm divide-y divide-line mb-6" id="step1-options">
+              <p class="px-5 py-4 text-[12px] text-mute">読み込み中...</p>
+            </div>
+            <button onclick="goOrderStep(2)" class="bg-brand text-white px-6 py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors">発注に進む →</button>
+          </div>`;
+      }
+
+      // STEP 2: Order form
+      if (orderStep === 2) {
+        const catCount = orderSelectedCategories.length;
+        return `
+          <div class="px-8 py-6">
+            ${stepIndicator}
+            ${orderError ? `<div class="bg-red-50 border border-red-200 text-red-700 text-[12px] px-4 py-2.5 rounded-sm mb-4">${orderError}</div>` : ''}
+            <h1 class="font-bold text-[17px] mb-5">発注情報の入力</h1>
+            <div class="space-y-6">
+              <!-- カテゴリー -->
+              <div class="bg-white border border-line rounded-sm p-5">
+                <h2 class="font-medium text-[14px] mb-1">カテゴリー <span class="text-brand">*</span></h2>
+                <p class="text-[12px] text-mute mb-3">5つまで選択できます（現在${catCount}個選択中）</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  ${ORDER_CATEGORIES.map(c => {
+                    const selected = orderSelectedCategories.includes(c.id);
+                    const disabled = !selected && catCount >= 5;
+                    return `<label class="flex items-center gap-2 px-3 py-2 border rounded-sm cursor-pointer transition-colors text-[13px] ${selected ? 'border-brand bg-brand/5 text-ink' : disabled ? 'border-line bg-ink/3 text-mute cursor-not-allowed' : 'border-line hover:border-ink/30'}">
+                      <input type="checkbox" ${selected ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="toggleOrderCategory('${c.id}')" class="rounded-sm">
+                      ${c.name}
+                    </label>`;
+                  }).join('')}
+                </div>
+              </div>
+              <!-- 配信先 -->
+              <div class="bg-white border border-line rounded-sm p-5">
+                <h2 class="font-medium text-[14px] mb-3">配信先国を選択 <span class="text-brand">*</span></h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  ${ORDER_COUNTRIES.map(c => {
+                    const selected = orderSelectedCountries.includes(c.id);
+                    return `<button onclick="toggleOrderCountry('${c.id}')" class="flex items-center gap-2 px-3 py-2.5 border rounded-sm text-[13px] transition-colors ${selected ? 'border-brand bg-brand/5 font-medium' : 'border-line hover:border-ink/30'}">
+                      <span class="text-[16px]">${c.flag}</span> ${c.name}
+                    </button>`;
+                  }).join('')}
+                </div>
+                ${orderSelectedCountries.length ? `<p class="text-[12px] text-sub mt-3">${orderSelectedCountries.length}カ国選択中 — 基本料金: ¥${(orderSelectedCountries.length * 50000).toLocaleString()}</p>` : ''}
+              </div>
+              <!-- オプション -->
+              <div class="bg-white border border-line rounded-sm p-5">
+                <h2 class="font-medium text-[14px] mb-3">オプション</h2>
+                <div class="space-y-2">
+                  ${orderOptions.map(opt => {
+                    const selected = orderSelectedOptions.includes(opt.id);
+                    const priceLabel = opt.price === 0 ? '無料' : (opt.price > 0 ? '+¥' + opt.price.toLocaleString() : '-¥' + Math.abs(opt.price).toLocaleString());
+                    const ruleLabel = opt.price_rule === 'per_country' ? '/ 1カ国' : '/ 1注文';
+                    return `<label class="flex items-center justify-between px-3 py-2.5 border rounded-sm cursor-pointer transition-colors ${selected ? 'border-brand bg-brand/5' : 'border-line hover:border-ink/30'}">
+                      <div class="flex items-center gap-2">
+                        <input type="checkbox" ${selected ? 'checked' : ''} onchange="toggleOrderOption('${opt.id}')" class="rounded-sm">
+                        <div>
+                          <span class="text-[13px]">${opt.name}</span>
+                          ${opt.description ? `<p class="text-[11px] text-mute">${opt.description}</p>` : ''}
+                        </div>
+                      </div>
+                      <span class="text-[12px] font-medium ${opt.price < 0 ? 'text-green-600' : opt.price > 0 ? 'text-sub' : 'text-mute'} whitespace-nowrap ml-3">${priceLabel} ${ruleLabel}</span>
+                    </label>`;
+                  }).join('')}
+                </div>
+              </div>
+              <!-- 企業情報 -->
+              <div class="bg-white border border-line rounded-sm p-5">
+                <h2 class="font-medium text-[14px] mb-3">お客様情報</h2>
+                <div class="space-y-3">
+                  <div><label class="block text-[12px] text-sub mb-1">企業名 <span class="text-brand">*</span></label><input id="order-company" type="text" value="${currentUser?.company || ''}" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white"></div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-[12px] text-sub mb-1">担当者名 <span class="text-brand">*</span></label><input id="order-contact" type="text" value="${currentUser?.name || ''}" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white"></div>
+                    <div><label class="block text-[12px] text-sub mb-1">電話番号</label><input id="order-phone" type="tel" placeholder="03-1234-5678" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white"></div>
+                  </div>
+                  <div><label class="block text-[12px] text-sub mb-1">メールアドレス <span class="text-brand">*</span></label><input id="order-email" type="email" value="${currentUser?.email || ''}" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white"></div>
+                </div>
+              </div>
+              <!-- SNS同意 -->
+              <label class="flex items-start gap-2 text-[13px] cursor-pointer">
+                <input type="checkbox" ${orderSnsConsent ? 'checked' : ''} onchange="orderSnsConsent=this.checked" class="mt-0.5 rounded-sm">
+                <span>SNSキャンペーンへの参加に同意します <span class="text-brand">*</span></span>
+              </label>
+              <!-- 金額サマリ -->
+              ${orderSelectedCountries.length ? `
+                <div class="bg-ink/5 border border-line rounded-sm p-5">
+                  <div class="flex justify-between text-[13px] mb-1"><span class="text-sub">基本料金（${orderSelectedCountries.length}カ国）</span><span class="font-medium">${fmtPrice(price.base)}</span></div>
+                  ${price.optionTotal !== 0 ? `<div class="flex justify-between text-[13px] mb-1"><span class="text-sub">オプション</span><span class="font-medium ${price.optionTotal < 0 ? 'text-green-600' : ''}">${fmtPrice(price.optionTotal)}</span></div>` : ''}
+                  <div class="flex justify-between text-[14px] font-bold border-t border-line pt-2 mt-2"><span>合計（税別）</span><span>${fmtPrice(price.total)}</span></div>
+                  <div class="flex justify-between text-[14px] font-bold mt-1"><span>合計（税込）</span><span class="text-brand">¥${Math.floor(price.total * 1.1).toLocaleString()}</span></div>
+                </div>
+              ` : ''}
+              <!-- Buttons -->
+              <div class="flex gap-3">
+                <button onclick="goOrderStep(1)" class="border border-line px-5 py-2.5 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors">← 戻る</button>
+                <button onclick="showConfirmPopup()" class="bg-brand text-white px-6 py-2.5 rounded-sm text-[13px] font-medium hover:bg-brand-dark transition-colors">発注内容を確認 →</button>
+              </div>
+            </div>
+            ${confirmPopup}
+          </div>`;
+      }
+
+      return '<div class="px-8 py-6"><p class="text-mute">不明なステップです</p></div>';
+    }
+
+    // Load options list for step 1 (after render)
+    function loadStep1Options() {
+      const el = document.getElementById('step1-options');
+      if (!el) return;
+      loadOrderOptions().then(() => {
+        el.innerHTML = orderOptions.map(opt => {
+          const priceLabel = opt.price === 0 ? '無料' : (opt.price > 0 ? '+¥' + opt.price.toLocaleString() : '-¥' + Math.abs(opt.price).toLocaleString());
+          const ruleLabel = opt.price_rule === 'per_country' ? '1カ国につき' : '1注文につき';
+          return `<div class="flex items-center justify-between px-5 py-3">
+            <div><p class="text-[13px] font-medium">${opt.name}</p>${opt.description ? `<p class="text-[11px] text-mute">${opt.description}</p>` : ''}</div>
+            <span class="text-[12px] font-medium ${opt.price < 0 ? 'text-green-600' : 'text-sub'} whitespace-nowrap ml-4">${priceLabel} <span class="text-mute font-normal">${ruleLabel}</span></span>
+          </div>`;
+        }).join('') || '<p class="px-5 py-4 text-[12px] text-mute">オプションはありません</p>';
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    //  ADMIN OPTIONS MANAGEMENT
+    // ══════════════════════════════════════════════════
+    let adminOptionsList = [];
+    let adminOptionsLoaded = false;
+    let showOptionForm = false;
+    let editingOption = null;
+
+    async function loadAdminOptions() {
+      try {
+        const res = await fetch('/api/options?all=true');
+        const data = await res.json();
+        if (data.options) adminOptionsList = data.options;
+        adminOptionsLoaded = true;
+      } catch (e) { console.error(e); }
+    }
+
+    async function saveOption() {
+      const name = document.getElementById('opt-name')?.value?.trim();
+      const description = document.getElementById('opt-desc')?.value?.trim() || '';
+      const price = parseInt(document.getElementById('opt-price')?.value || '0', 10);
+      const priceRule = document.getElementById('opt-rule')?.value || 'per_country';
+      if (!name) return;
+
+      const body = { name, description, price, price_rule: priceRule };
+      if (editingOption) body.id = editingOption.id;
+
+      await fetch('/api/options', {
+        method: editingOption ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      showOptionForm = false;
+      editingOption = null;
+      await loadAdminOptions();
+      render();
+    }
+
+    async function deleteOption(id) {
+      await fetch('/api/options?id=' + id, { method: 'DELETE' });
+      await loadAdminOptions();
+      render();
+    }
+
+    function openOptionForm(opt) {
+      editingOption = opt || null;
+      showOptionForm = true;
+      render();
+    }
+
+    function renderAdminOptions() {
+      if (!adminOptionsLoaded) {
+        loadAdminOptions().then(() => render());
+        return '<div class="max-w-5xl mx-auto px-4 py-6"><p class="text-mute text-[13px]">読み込み中...</p></div>';
+      }
+
+      const formPopup = showOptionForm ? `
+        <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onclick="if(event.target===this){showOptionForm=false;render();}">
+          <div class="bg-white rounded-sm max-w-md w-full p-6">
+            <h2 class="font-bold text-[15px] mb-4">${editingOption ? 'オプション編集' : 'オプション追加'}</h2>
+            <div class="space-y-3">
+              <div><label class="block text-[12px] text-sub mb-1">名前 <span class="text-brand">*</span></label><input id="opt-name" type="text" value="${editingOption?.name || ''}" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40"></div>
+              <div><label class="block text-[12px] text-sub mb-1">説明</label><input id="opt-desc" type="text" value="${editingOption?.description || ''}" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40"></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div><label class="block text-[12px] text-sub mb-1">金額（円）</label><input id="opt-price" type="number" value="${editingOption?.price ?? 0}" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40"></div>
+                <div><label class="block text-[12px] text-sub mb-1">単位</label><select id="opt-rule" class="w-full px-3 py-2 border border-line rounded-sm text-[13px] focus:border-ink/40 bg-white">
+                  <option value="per_country" ${editingOption?.price_rule === 'per_country' || !editingOption ? 'selected' : ''}>1カ国につき</option>
+                  <option value="per_order" ${editingOption?.price_rule === 'per_order' ? 'selected' : ''}>1注文につき</option>
+                </select></div>
+              </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+              <button onclick="showOptionForm=false;editingOption=null;render();" class="flex-1 border border-line py-2 rounded-sm text-[13px] text-sub hover:border-ink/30 transition-colors">キャンセル</button>
+              <button onclick="saveOption()" class="flex-1 bg-ink text-white py-2 rounded-sm text-[13px] font-medium hover:bg-ink/80 transition-colors">保存</button>
+            </div>
+          </div>
+        </div>` : '';
+
+      const active = adminOptionsList.filter(o => o.is_active);
+      const inactive = adminOptionsList.filter(o => !o.is_active);
+
+      return `
+        <div class="max-w-5xl mx-auto px-4 py-6">
+          <div class="flex items-center justify-between mb-5">
+            <h1 class="font-bold text-[17px]">オプション管理</h1>
+            <button onclick="openOptionForm()" class="bg-brand text-white px-4 py-2 rounded-sm text-[12px] font-medium hover:bg-brand-dark transition-colors">+ 追加</button>
+          </div>
+          <div class="bg-white border border-line rounded-sm overflow-hidden">
+            <table class="w-full text-[13px]">
+              <thead><tr class="border-b border-line bg-bg/50"><th class="text-left py-2.5 px-4 font-medium text-sub">名前</th><th class="text-left py-2.5 px-4 font-medium text-sub">金額</th><th class="text-left py-2.5 px-4 font-medium text-sub">単位</th><th class="text-right py-2.5 px-4 font-medium text-sub">操作</th></tr></thead>
+              <tbody>
+                ${active.map(opt => {
+                  const priceLabel = opt.price === 0 ? '無料' : (opt.price > 0 ? '+¥' + opt.price.toLocaleString() : '-¥' + Math.abs(opt.price).toLocaleString());
+                  return `<tr class="border-b border-line/60 last:border-0">
+                    <td class="py-3 px-4"><p class="font-medium">${opt.name}</p>${opt.description ? `<p class="text-[11px] text-mute">${opt.description}</p>` : ''}</td>
+                    <td class="py-3 px-4 ${opt.price < 0 ? 'text-green-600' : ''}">${priceLabel}</td>
+                    <td class="py-3 px-4 text-mute">${opt.price_rule === 'per_country' ? '1カ国' : '1注文'}</td>
+                    <td class="py-3 px-4 text-right"><button onclick='openOptionForm(${JSON.stringify(opt)})' class="text-brand hover:underline mr-3">編集</button><button onclick="if(confirm('削除しますか？'))deleteOption('${opt.id}')" class="text-red-500 hover:underline">削除</button></td>
+                  </tr>`;
+                }).join('')}
+                ${!active.length ? '<tr><td colspan="4" class="py-6 text-center text-mute">オプションがありません</td></tr>' : ''}
+              </tbody>
+            </table>
+          </div>
+          ${inactive.length ? `
+            <h2 class="font-medium text-[14px] mt-6 mb-3 text-mute">無効なオプション</h2>
+            <div class="bg-white border border-line rounded-sm overflow-hidden opacity-60">
+              <table class="w-full text-[13px]">
+                <tbody>${inactive.map(opt => `<tr class="border-b border-line/60 last:border-0"><td class="py-3 px-4">${opt.name}</td><td class="py-3 px-4">${opt.price === 0 ? '無料' : '¥' + opt.price.toLocaleString()}</td><td class="py-3 px-4 text-mute">${opt.price_rule === 'per_country' ? '1カ国' : '1注文'}</td><td class="py-3 px-4 text-right"><button onclick="(async()=>{await fetch('/api/options',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:'${opt.id}',is_active:true})});await loadAdminOptions();render();})()" class="text-brand hover:underline">有効化</button></td></tr>`).join('')}</tbody>
+              </table>
+            </div>
+          ` : ''}
+        </div>
+        ${formPopup}`;
+    }
+
+    // ══════════════════════════════════════════════════
+    //  ADMIN ORDERS (real data from Supabase)
+    // ══════════════════════════════════════════════════
+    let adminOrdersList = [];
+    let adminOrdersLoaded = false;
+
+    async function loadAdminOrders() {
+      try {
+        const res = await fetch('/api/orders', {
+          headers: { 'Authorization': 'Bearer ' + authToken },
+        });
+        const data = await res.json();
+        if (data.orders) adminOrdersList = data.orders;
+        adminOrdersLoaded = true;
+      } catch (e) { console.error(e); }
+    }
+
+    function renderAdminOrdersList() {
+      if (!adminOrdersLoaded) {
+        loadAdminOrders().then(() => render());
+        return '<div class="max-w-6xl mx-auto px-4 py-6"><p class="text-mute text-[13px]">読み込み中...</p></div>';
+      }
+
+      const statusLabels = { pending: '受付', in_progress: '進行中', review: 'レビュー', completed: '完了', cancelled: 'キャンセル' };
+      const statusColors = { pending: 'bg-yellow-50 text-yellow-700 border-yellow-200', in_progress: 'bg-blue-50 text-blue-700 border-blue-200', review: 'bg-purple-50 text-purple-700 border-purple-200', completed: 'bg-green-50 text-green-700 border-green-200', cancelled: 'bg-ink/5 text-mute border-line' };
+
+      return `
+        <div class="max-w-6xl mx-auto px-4 py-6">
+          <h1 class="font-bold text-[17px] mb-5">発注管理</h1>
+          <div class="bg-white border border-line rounded-sm overflow-hidden">
+            <table class="w-full text-[13px]">
+              <thead><tr class="border-b border-line bg-bg/50">
+                <th class="text-left py-2.5 px-4 font-medium text-sub">注文ID</th>
+                <th class="text-left py-2.5 px-4 font-medium text-sub">企業名</th>
+                <th class="text-left py-2.5 px-4 font-medium text-sub">配信先</th>
+                <th class="text-right py-2.5 px-4 font-medium text-sub">金額（税込）</th>
+                <th class="text-left py-2.5 px-4 font-medium text-sub">ステータス</th>
+                <th class="text-left py-2.5 px-4 font-medium text-sub">日時</th>
+              </tr></thead>
+              <tbody>
+                ${adminOrdersList.map(o => `
+                  <tr class="border-b border-line/60 last:border-0 hover:bg-bg/50">
+                    <td class="py-3 px-4 font-mono text-[12px] text-mute">${o.id.slice(0, 8)}</td>
+                    <td class="py-3 px-4 font-medium">${o.company_name}</td>
+                    <td class="py-3 px-4">${o.countries.map(id => { const c = ORDER_COUNTRIES.find(x=>x.id===id); return c ? c.flag : id; }).join(' ')} <span class="text-mute">(${o.countries.length})</span></td>
+                    <td class="py-3 px-4 text-right font-medium">¥${Math.floor(o.total_price * 1.1).toLocaleString()}</td>
+                    <td class="py-3 px-4"><span class="text-[11px] px-2 py-0.5 border rounded-sm ${statusColors[o.status] || ''}">${statusLabels[o.status] || o.status}</span></td>
+                    <td class="py-3 px-4 text-mute text-[12px]">${new Date(o.created_at).toLocaleDateString('ja-JP')}</td>
+                  </tr>
+                `).join('')}
+                ${!adminOrdersList.length ? '<tr><td colspan="6" class="py-8 text-center text-mute">発注はまだありません</td></tr>' : ''}
               </tbody>
             </table>
           </div>
