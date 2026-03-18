@@ -90,18 +90,18 @@ export default async function handler(req, res) {
         html: `
           <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
             <div style="margin-bottom:24px;">
-              <span style="background:#e8380d;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;">AW</span>
+              <span style="background:#2563eb;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;">AW</span>
               <span style="font-size:15px;font-weight:700;margin-left:6px;">ApocWire</span>
             </div>
-            <p style="font-size:14px;color:#222;margin-bottom:8px;">${contact_name} 様</p>
-            <p style="font-size:13px;color:#666;margin-bottom:16px;">プレスリリース配信のご発注を受け付けました。</p>
-            <div style="background:#f5f5f3;border:1px solid #e0e0e0;padding:16px;margin-bottom:16px;">
+            <p style="font-size:14px;color:#1a2f5e;margin-bottom:8px;">${contact_name} 様</p>
+            <p style="font-size:13px;color:#4a5568;margin-bottom:16px;">プレスリリース配信のご発注を受け付けました。</p>
+            <div style="background:#f0f4ff;border:1px solid #e0e0e0;padding:16px;margin-bottom:16px;">
               <p style="font-size:12px;color:#999;margin-bottom:4px;">注文ID</p>
-              <p style="font-size:14px;font-weight:700;color:#222;">${order.id.slice(0, 8)}</p>
+              <p style="font-size:14px;font-weight:700;color:#1a2f5e;">${order.id.slice(0, 8)}</p>
               <p style="font-size:12px;color:#999;margin-top:12px;margin-bottom:4px;">配信先</p>
-              <p style="font-size:13px;color:#222;">${countries.length}カ国</p>
+              <p style="font-size:13px;color:#1a2f5e;">${countries.length}カ国</p>
               <p style="font-size:12px;color:#999;margin-top:12px;margin-bottom:4px;">合計金額（税込）</p>
-              <p style="font-size:16px;font-weight:700;color:#e8380d;">¥${Math.floor(total_price * 1.1).toLocaleString()}</p>
+              <p style="font-size:16px;font-weight:700;color:#2563eb;">¥${Math.floor(total_price * 1.1).toLocaleString()}</p>
             </div>
             <p style="font-size:12px;color:#999;">担当者より改めてご連絡いたします。</p>
           </div>

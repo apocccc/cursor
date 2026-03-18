@@ -92,13 +92,13 @@ export default async function handler(req, res) {
       html: `
         <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
           <div style="margin-bottom:24px;">
-            <span style="background:#e8380d;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;">AW</span>
+            <span style="background:#2563eb;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;">AW</span>
             <span style="font-size:15px;font-weight:700;margin-left:6px;">ApocWire</span>
           </div>
-          <p style="font-size:14px;color:#222;margin-bottom:4px;">会員登録ありがとうございます</p>
-          <p style="font-size:13px;color:#666;margin-bottom:20px;">以下のボタンをクリックしてメールアドレスを確認してください。</p>
+          <p style="font-size:14px;color:#1a2f5e;margin-bottom:4px;">会員登録ありがとうございます</p>
+          <p style="font-size:13px;color:#4a5568;margin-bottom:20px;">以下のボタンをクリックしてメールアドレスを確認してください。</p>
           ${name ? `<p style="font-size:12px;color:#999;margin-bottom:16px;">登録名: ${name}${company ? ` / ${company}` : ""}</p>` : ""}
-          <a href="${verifyUrl}" style="display:inline-block;background:#222;color:#fff;font-size:13px;font-weight:600;padding:12px 28px;text-decoration:none;">メールアドレスを確認する</a>
+          <a href="${verifyUrl}" style="display:inline-block;background:#2563eb;color:#fff;font-size:13px;font-weight:600;padding:12px 28px;text-decoration:none;">メールアドレスを確認する</a>
           <p style="font-size:11px;color:#999;margin-top:20px;">ボタンが機能しない場合は、以下のURLをブラウザに貼り付けてください:</p>
           <p style="font-size:11px;color:#999;word-break:break-all;">${verifyUrl}</p>
           <p style="font-size:11px;color:#ccc;margin-top:24px;">このリンクは24時間有効です。心当たりのない場合は無視してください。</p>

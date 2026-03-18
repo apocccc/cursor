@@ -45,12 +45,12 @@ export default async function handler(req, res) {
       html: `
         <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
           <div style="margin-bottom:24px;">
-            <span style="background:#e8380d;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;">AW</span>
+            <span style="background:#2563eb;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;">AW</span>
             <span style="font-size:15px;font-weight:700;margin-left:6px;">ApocWire</span>
           </div>
-          <p style="font-size:14px;color:#222;margin-bottom:8px;">ログイン認証コード</p>
-          <div style="background:#f5f5f3;border:1px solid #e0e0e0;padding:20px;text-align:center;margin-bottom:16px;">
-            <span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#222;">${code}</span>
+          <p style="font-size:14px;color:#1a2f5e;margin-bottom:8px;">ログイン認証コード</p>
+          <div style="background:#f0f4ff;border:1px solid #e0e0e0;padding:20px;text-align:center;margin-bottom:16px;">
+            <span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#1a2f5e;">${code}</span>
           </div>
           <p style="font-size:12px;color:#999;">このコードは5分間有効です。心当たりのない場合は無視してください。</p>
         </div>

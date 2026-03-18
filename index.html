@@ -10,14 +10,15 @@
       theme: {
         extend: {
           colors: {
-            brand: '#e8380d',
-            'brand-dark': '#c42f0a',
-            ink: '#222',
-            sub: '#666',
+            brand: '#2563eb',
+            'brand-dark': '#1d4ed8',
+            ink: '#1a2f5e',
+            sub: '#4a5568',
             mute: '#999',
             line: '#e0e0e0',
-            bg: '#f5f5f3',
+            bg: '#ffffff',
             surface: '#fff',
+            highlight: '#facc15',
           }
         }
       }
@@ -29,9 +30,9 @@
     body { font-family: 'Noto Sans JP', system-ui, sans-serif; }
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     input:focus, select:focus, textarea:focus { outline: none; }
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #e0e0e0; border-top-color: #e8380d; border-radius: 50%; animation: spin .6s linear infinite; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #e0e0e0; border-top-color: #2563eb; border-radius: 50%; animation: spin .6s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .tab-active { color: #222; border-bottom: 2px solid #e8380d; }
+    .tab-active { color: #1a2f5e; border-bottom: 2px solid #2563eb; }
     .tab-inactive { color: #999; border-bottom: 2px solid transparent; }
     .region-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 7px; border: 1px solid #e0e0e0; border-radius: 2px; color: #666; }
   </style>
@@ -62,7 +63,7 @@
   <div id="header-dash" class="hidden"></div>
 
   <!-- Header translator -->
-  <header id="header-trans" class="bg-[#1a3a4a] sticky top-0 z-50 hidden">
+  <header id="header-trans" class="bg-[#1a2f5e] sticky top-0 z-50 hidden">
     <div class="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
       <div class="flex items-center gap-4">
         <a href="#" onclick="navigate('trans-dashboard')" class="flex items-center gap-1.5">
@@ -81,7 +82,7 @@
   </header>
 
   <!-- Header admin (APOC) -->
-  <header id="header-admin" class="bg-[#1a1a2e] sticky top-0 z-50 hidden">
+  <header id="header-admin" class="bg-[#1a2f5e] sticky top-0 z-50 hidden">
     <div class="max-w-6xl mx-auto px-4 h-12 flex items-center justify-between">
       <div class="flex items-center gap-4">
         <a href="#" onclick="navigate('admin-dashboard')" class="flex items-center gap-1.5">
@@ -1740,28 +1741,22 @@
 
       // Media coverage (per-release pickup list)
       const mediaCoverage = [
-        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/12/techvision-autoflow-ai', region: 'na', lang: 'en', date: '2026-03-12', type: 'テック' },
-        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'The Verge', url: 'https://theverge.com/2026/3/12/techvision-autoflow', region: 'na', lang: 'en', date: '2026-03-12', type: 'テック' },
-        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'VentureBeat', url: 'https://venturebeat.com/ai/techvision-autoflow-ai-launch', region: 'na', lang: 'en', date: '2026-03-13', type: 'テック' },
-        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: 'Reuters', url: 'https://reuters.com/technology/techvision-autoflow-2026', region: 'eu', lang: 'en', date: '2026-03-12', type: '通信社' },
-        { slug: '/press/1', release: 'AutoFlow AI を正式リリース', media: '36Kr', url: 'https://36kr.com/p/techvision-autoflow-ai', region: 'cn', lang: 'zh', date: '2026-03-13', type: 'テック' },
-        { slug: '/press/2', release: '100%リサイクル素材の建築資材', media: 'Bloomberg', url: 'https://bloomberg.com/news/green-factory-recycled-panels', region: 'na', lang: 'en', date: '2026-03-11', type: 'ビジネス' },
-        { slug: '/press/2', release: '100%リサイクル素材の建築資材', media: 'Financial Times', url: 'https://ft.com/content/green-factory-sustainability', region: 'eu', lang: 'en', date: '2026-03-11', type: 'ビジネス' },
-        { slug: '/press/2', release: '100%リサイクル素材の建築資材', media: 'Handelsblatt', url: 'https://handelsblatt.com/green-factory-recycling', region: 'eu', lang: 'de', date: '2026-03-12', type: 'ビジネス' },
-        { slug: '/press/3', release: 'HAKKO PROTEIN シリーズ発売', media: 'Food Navigator', url: 'https://foodnavigator.com/umami-lab-hakko-protein', region: 'eu', lang: 'en', date: '2026-03-10', type: '食品' },
-        { slug: '/press/3', release: 'HAKKO PROTEIN シリーズ発売', media: 'The Spoon', url: 'https://thespoon.tech/umami-lab-fermented-protein', region: 'na', lang: 'en', date: '2026-03-11', type: '食品' },
-        { slug: '/press/4', release: 'フルXRライブ施設オープン', media: 'Variety', url: 'https://variety.com/2026/stageone-xr-tokyo', region: 'na', lang: 'en', date: '2026-03-09', type: 'エンタメ' },
-        { slug: '/press/4', release: 'フルXRライブ施設オープン', media: 'The Hollywood Reporter', url: 'https://hollywoodreporter.com/stageone-xr-venue', region: 'na', lang: 'en', date: '2026-03-10', type: 'エンタメ' },
-        { slug: '/press/4', release: 'フルXRライブ施設オープン', media: 'Korea Herald', url: 'https://koreaherald.com/stageone-xr-tokyo-opening', region: 'kr', lang: 'ko', date: '2026-03-10', type: 'エンタメ' },
-        { slug: '/press/5', release: 'SkinCheck 医療機器認証取得', media: 'STAT News', url: 'https://statnews.com/mediwell-skincheck-approval', region: 'na', lang: 'en', date: '2026-03-08', type: '医療' },
-        { slug: '/press/5', release: 'SkinCheck 医療機器認証取得', media: 'Fierce Healthcare', url: 'https://fiercehealthcare.com/mediwell-ai-dermatology', region: 'na', lang: 'en', date: '2026-03-09', type: '医療' },
-        { slug: '/press/6', release: 'シリーズB 30億円調達', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/07/techvision-series-b', region: 'na', lang: 'en', date: '2026-03-07', type: 'テック' },
-        { slug: '/press/6', release: 'シリーズB 30億円調達', media: 'Tech in Asia', url: 'https://techinasia.com/techvision-series-b-30-billion-yen', region: 'asia', lang: 'en', date: '2026-03-07', type: 'テック' },
-        { slug: '/press/6', release: 'シリーズB 30億円調達', media: 'DealStreetAsia', url: 'https://dealstreetasia.com/stories/techvision-funding', region: 'asia', lang: 'en', date: '2026-03-08', type: 'テック' },
-        { slug: '/press/7', release: '廃バッテリーリサイクル事業提携', media: 'Automotive News', url: 'https://autonews.com/green-factory-ev-battery-recycling', region: 'na', lang: 'en', date: '2026-03-06', type: '自動車' },
-        { slug: '/press/7', release: '廃バッテリーリサイクル事業提携', media: 'Nikkei Asia', url: 'https://asia.nikkei.com/green-factory-battery-recycling', region: 'asia', lang: 'en', date: '2026-03-06', type: 'ビジネス' },
-        { slug: '/press/8', release: '韓国エンタメ企業と提携', media: 'Billboard', url: 'https://billboard.com/stageone-starlight-xr-partnership', region: 'na', lang: 'en', date: '2026-03-05', type: 'エンタメ' },
-        { slug: '/press/8', release: '韓国エンタメ企業と提携', media: 'Chosun Ilbo', url: 'https://chosun.com/stageone-starlight-partnership', region: 'kr', lang: 'ko', date: '2026-03-05', type: 'エンタメ' },
+        { slug: '/press/2', release: 'shu uemura ポップアップイベント', media: 'WWD Japan', url: 'https://wwdjapan.com/articles/shu-uemura-sento-popup', region: 'asia', lang: 'en', date: '2026-03-18', type: 'ビューティー' },
+        { slug: '/press/2', release: 'shu uemura ポップアップイベント', media: 'Allure', url: 'https://allure.com/story/shu-uemura-sento-popup-tokyo', region: 'na', lang: 'en', date: '2026-03-18', type: 'ビューティー' },
+        { slug: '/press/3', release: 'XTuber 商標ガイドライン策定', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/18/pandora-xtuber-guidelines', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
+        { slug: '/press/3', release: 'XTuber 商標ガイドライン策定', media: 'The Verge', url: 'https://theverge.com/2026/3/18/pandora-xtuber-trademark', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
+        { slug: '/press/4', release: 'にじさんじ Spring Party 2026', media: 'Anime News Network', url: 'https://animenewsnetwork.com/news/nijisanji-spring-party-2026', region: 'na', lang: 'en', date: '2026-03-18', type: 'エンタメ' },
+        { slug: '/press/4', release: 'にじさんじ Spring Party 2026', media: 'Korea Herald', url: 'https://koreaherald.com/nijisanji-spring-party-tokyo-dome', region: 'kr', lang: 'ko', date: '2026-03-18', type: 'エンタメ' },
+        { slug: '/press/5', release: 'WebRelease 2 マイクロソフト連携', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/18/frameworks-webrelease-microsoft', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
+        { slug: '/press/5', release: 'WebRelease 2 マイクロソフト連携', media: 'ZDNet', url: 'https://zdnet.com/article/frameworks-software-webrelease-2', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
+        { slug: '/press/6', release: '春酒のご紹介', media: 'Food Navigator', url: 'https://foodnavigator-asia.com/sake-spring-collection-2026', region: 'asia', lang: 'en', date: '2026-03-18', type: '食品' },
+        { slug: '/press/6', release: '春酒のご紹介', media: 'The Drinks Business', url: 'https://thedrinksbusiness.com/sake-spring-japan-2026', region: 'eu', lang: 'en', date: '2026-03-18', type: '食品' },
+        { slug: '/press/7', release: 'ホシザキグローバルサイト新設', media: 'Reuters', url: 'https://reuters.com/business/hoshizaki-global-site-launch', region: 'eu', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
+        { slug: '/press/7', release: 'ホシザキグローバルサイト新設', media: 'Nikkei Asia', url: 'https://asia.nikkei.com/hoshizaki-global-website', region: 'asia', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
+        { slug: '/press/9', release: 'ベリーベスト法律事務所 AI導入', media: 'Bloomberg Law', url: 'https://bloomberglaw.com/verybest-legalscape-ai-adoption', region: 'na', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
+        { slug: '/press/9', release: 'ベリーベスト法律事務所 AI導入', media: 'Financial Times', url: 'https://ft.com/content/verybest-ai-legal-japan', region: 'eu', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
+        { slug: '/press/10', release: 'ロジクラ freeeグループイン', media: 'Tech in Asia', url: 'https://techinasia.com/logikura-freee-acquisition', region: 'asia', lang: 'en', date: '2026-03-18', type: 'テック' },
+        { slug: '/press/10', release: 'ロジクラ freeeグループイン', media: 'DealStreetAsia', url: 'https://dealstreetasia.com/stories/freee-logikura', region: 'asia', lang: 'en', date: '2026-03-18', type: 'テック' },
       ];
 
       return { dailyLabels, dailyPV, dailyUU, slugData, referrers, countries, mediaCoverage, totalPV, totalUU, avgDuration, bounceRate };
@@ -2100,7 +2095,7 @@
           data: {
             labels,
             datasets: [
-              { label: 'PV', data: pvData, borderColor: '#e8380d', backgroundColor: 'rgba(232,56,13,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
+              { label: 'PV', data: pvData, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
               { label: 'UU', data: uuData, borderColor: '#999', backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 4, borderDash: [4, 2] },
             ],
           },
@@ -2119,7 +2114,7 @@
             type: 'bar',
             data: {
               labels: slabels,
-              datasets: [{ label: 'PV', data: sdata, backgroundColor: 'rgba(232,56,13,0.6)', borderRadius: 2 }],
+              datasets: [{ label: 'PV', data: sdata, backgroundColor: 'rgba(37,99,235,0.6)', borderRadius: 2 }],
             },
             options: {
               ...sharedOpts,
@@ -2140,7 +2135,7 @@
             labels: [...top5.map(c => c.name), 'その他'],
             datasets: [{
               data: [...top5.map(c => c.pv), otherPV],
-              backgroundColor: ['#e8380d', '#222', '#666', '#999', '#ccc', '#e8e8e8'],
+              backgroundColor: ['#2563eb', '#1a2f5e', '#4a5568', '#999', '#ccc', '#e8e8e8'],
               borderWidth: 0,
             }],
           },

@@ -69,7 +69,7 @@ function sendHtml(res, status, type, errorMsg) {
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      theme: { extend: { colors: { brand: '#e8380d', ink: '#222', sub: '#666', mute: '#999', line: '#e0e0e0', bg: '#f5f5f3' } } }
+      theme: { extend: { colors: { brand: '#2563eb', ink: '#1a2f5e', sub: '#4a5568', mute: '#999', line: '#e0e0e0', bg: '#ffffff' } } }
     }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
