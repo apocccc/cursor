@@ -15,7 +15,10 @@ const supabase = createClient(
 // GA4
 const propertyId = process.env.GA4_PROPERTY_ID;
 const clientEmail = process.env.GA4_CLIENT_EMAIL;
-const privateKey = process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, "\n");
+let privateKey = process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, "\n");
+if (privateKey && !privateKey.includes("BEGIN PRIVATE KEY")) {
+  privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey.trim()}\n-----END PRIVATE KEY-----\n`;
+}
 
 if (!propertyId || !clientEmail || !privateKey) {
   console.error("Missing GA4 env vars (GA4_PROPERTY_ID, GA4_CLIENT_EMAIL, GA4_PRIVATE_KEY)");
