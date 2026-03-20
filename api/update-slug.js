@@ -37,13 +37,21 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: "認証が必要です" });
   if (user.role !== "admin") return res.status(403).json({ error: "admin権限が必要です" });
 
-  const { id, slug } = req.body || {};
-  if (!id) return res.status(400).json({ error: "プレスリリースIDが必要です" });
+  const { id, title, slug } = req.body || {};
+  if (!id && !title) return res.status(400).json({ error: "プレスリリースIDまたはタイトルが必要です" });
 
-  const { error } = await supabase
-    .from("press_releases")
-    .update({ slug: slug || null })
-    .eq("id", id);
+  // UUIDならidで検索、それ以外はtitleで検索
+  const isUUID = id && /^[0-9a-f]{8}-/.test(id);
+  let query = supabase.from("press_releases").update({ slug: slug || null });
+  if (isUUID) {
+    query = query.eq("id", id);
+  } else if (title) {
+    query = query.eq("title", title);
+  } else {
+    return res.status(400).json({ error: "有効なIDまたはタイトルが必要です" });
+  }
+
+  const { error, count } = await query;
 
   if (error) {
     return res.status(500).json({ error: "slugの更新に失敗しました" });

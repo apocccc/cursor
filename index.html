@@ -2574,7 +2574,7 @@
                     <td class="px-5 py-2.5 truncate max-w-[300px]">${pr.title}</td>
                     <td class="px-5 py-2.5"><span class="text-[11px] text-green-600">公開中</span></td>
                     <td class="px-5 py-2.5">
-                      <span class="slug-cell cursor-pointer" data-pr-id="${pr.id}" onclick="startSlugEdit(this, '${pr.id}', '${(pr.slug || '').replace(/'/g, "\\'")}')">
+                      <span class="slug-cell cursor-pointer" data-pr-id="${pr.id}" data-pr-title="${pr.title.replace(/"/g, '&quot;')}" onclick="startSlugEdit(this, '${pr.id}', '${(pr.slug || '').replace(/'/g, "\\'")}', this.dataset.prTitle)">
                         ${pr.slug ? `<span class="text-[11px] font-mono text-brand">${pr.slug}</span>` : '<span class="text-[11px] text-mute">未設定</span>'}
                       </span>
                     </td>
@@ -2587,7 +2587,8 @@
     }
 
     // slug inline edit (admin only)
-    function startSlugEdit(el, prId, currentSlug) {
+    function startSlugEdit(el, prId, currentSlug, prTitle) {
+      if (el.querySelector('input')) return; // already editing
       const input = document.createElement('input');
       input.type = 'text';
       input.value = currentSlug;
@@ -2596,35 +2597,38 @@
       el.innerHTML = '';
       el.appendChild(input);
       input.focus();
-      const save = () => saveSlug(el, prId, input.value.trim());
+      let saved = false;
+      const save = () => {
+        if (saved) return;
+        saved = true;
+        saveSlug(el, prId, input.value.trim(), prTitle);
+      };
       input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
       input.addEventListener('blur', save);
     }
 
-    async function saveSlug(el, prId, slug) {
+    async function saveSlug(el, prId, slug, prTitle) {
+      const renderSlug = (s) => s
+        ? `<span class="text-[11px] font-mono text-brand">${s}</span>`
+        : '<span class="text-[11px] text-mute">未設定</span>';
       try {
         const token = localStorage.getItem('token');
         const res = await fetch('/api/update-slug', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: prId, slug }),
+          body: JSON.stringify({ id: prId, title: prTitle, slug }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         // Update local data
         const pr = PRESS_RELEASES.find(p => p.id === prId);
         if (pr) pr.slug = slug || null;
-        el.innerHTML = slug
-          ? `<span class="text-[11px] font-mono text-brand">${slug}</span>`
-          : '<span class="text-[11px] text-mute">未設定</span>';
+        el.innerHTML = renderSlug(slug);
       } catch (err) {
         el.innerHTML = `<span class="text-[11px] text-red-600">${err.message}</span>`;
         setTimeout(() => {
           const pr = PRESS_RELEASES.find(p => p.id === prId);
-          const s = pr?.slug;
-          el.innerHTML = s
-            ? `<span class="text-[11px] font-mono text-brand">${s}</span>`
-            : '<span class="text-[11px] text-mute">未設定</span>';
+          el.innerHTML = renderSlug(pr?.slug);
         }, 2000);
       }
     }
