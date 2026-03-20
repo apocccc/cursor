@@ -2556,12 +2556,15 @@
             <div class="px-5 py-3 border-b border-line">
               <h2 class="font-medium text-[13px]">プレスリリース一覧（slug管理）</h2>
             </div>
+            <!-- slugはapocwire.comに配信された記事URLの識別子です -->
+            <!-- 例：https://apocwire.com/press/cyberagent_us20260316 → slug: cyberagent_us20260316 -->
+            <!-- adminが配信完了後に手動で設定し、GA4データの取得に使用します -->
             <table class="w-full text-[13px]">
               <thead>
                 <tr class="border-b border-line text-left text-[11px] text-mute">
                   <th class="px-5 py-2 font-medium">タイトル</th>
                   <th class="px-5 py-2 font-medium">ステータス</th>
-                  <th class="px-5 py-2 font-medium">slug</th>
+                  <th class="px-5 py-2 font-medium">slug（クリックで編集）</th>
                   <th class="px-5 py-2 font-medium">GA PV</th>
                 </tr>
               </thead>
@@ -2570,13 +2573,60 @@
                   <tr class="border-b border-line/60 last:border-0 hover:bg-bg/60">
                     <td class="px-5 py-2.5 truncate max-w-[300px]">${pr.title}</td>
                     <td class="px-5 py-2.5"><span class="text-[11px] text-green-600">公開中</span></td>
-                    <td class="px-5 py-2.5">${pr.slug ? `<span class="text-[11px] font-mono text-brand">${pr.slug}</span>` : '<span class="text-[11px] text-mute">未設定</span>'}</td>
+                    <td class="px-5 py-2.5">
+                      <span class="slug-cell cursor-pointer" data-pr-id="${pr.id}" onclick="startSlugEdit(this, '${pr.id}', '${(pr.slug || '').replace(/'/g, "\\'")}')">
+                        ${pr.slug ? `<span class="text-[11px] font-mono text-brand">${pr.slug}</span>` : '<span class="text-[11px] text-mute">未設定</span>'}
+                      </span>
+                    </td>
                     <td class="px-5 py-2.5 text-[11px] text-mute">${pr.ga_page_views != null ? pr.ga_page_views.toLocaleString() : '-'}</td>
                   </tr>`).join('')}
               </tbody>
             </table>
           </div>
         </div>`;
+    }
+
+    // slug inline edit (admin only)
+    function startSlugEdit(el, prId, currentSlug) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentSlug;
+      input.placeholder = 'cyberagent_us20260316';
+      input.className = 'px-2 py-1 border border-brand rounded text-[11px] font-mono w-full focus:outline-none';
+      el.innerHTML = '';
+      el.appendChild(input);
+      input.focus();
+      const save = () => saveSlug(el, prId, input.value.trim());
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+      input.addEventListener('blur', save);
+    }
+
+    async function saveSlug(el, prId, slug) {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/update-slug', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: prId, slug }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        // Update local data
+        const pr = PRESS_RELEASES.find(p => p.id === prId);
+        if (pr) pr.slug = slug || null;
+        el.innerHTML = slug
+          ? `<span class="text-[11px] font-mono text-brand">${slug}</span>`
+          : '<span class="text-[11px] text-mute">未設定</span>';
+      } catch (err) {
+        el.innerHTML = `<span class="text-[11px] text-red-600">${err.message}</span>`;
+        setTimeout(() => {
+          const pr = PRESS_RELEASES.find(p => p.id === prId);
+          const s = pr?.slug;
+          el.innerHTML = s
+            ? `<span class="text-[11px] font-mono text-brand">${s}</span>`
+            : '<span class="text-[11px] text-mute">未設定</span>';
+        }, 2000);
+      }
     }
 
     // ══════════════════════════════════════════════════
