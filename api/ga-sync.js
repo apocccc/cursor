@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
   const propertyId = process.env.GA4_PROPERTY_ID;
   const clientEmail = process.env.GA4_CLIENT_EMAIL;
-  const privateKey = process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const privateKey = process.env.GA4_PRIVATE_KEY?.replace(/\\\\n/g, "\n");
 
   if (!propertyId || !clientEmail || !privateKey) {
     return res.status(500).json({ error: "GA4環境変数が未設定です" });
@@ -101,6 +101,7 @@ export default async function handler(req, res) {
       if (!updateErr) updated++;
     } catch (err) {
       // エラー時は該当記事のGA数値をnullのまま維持
+      console.error('GA4 auth error:', err.message, err.code);
       console.error(`GA sync error for ${release.slug}:`, err.message);
     }
   }
