@@ -18,13 +18,13 @@ async function getUser(req) {
     .from("sessions")
     .select("user_id, expires_at")
     .eq("token", token)
-    .single();
+    .maybeSingle();
   if (!session || new Date(session.expires_at) < new Date()) return null;
   const { data: user } = await supabase
     .from("users")
     .select("id, email, name, company, role")
     .eq("id", session.user_id)
-    .single();
+    .maybeSingle();
   return user;
 }
 
