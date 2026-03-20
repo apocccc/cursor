@@ -165,6 +165,19 @@ async function fetchReleaseDetail(url) {
       body = body.substring(0, 600) + "...";
     }
 
+    // サムネイル画像URL（OGP画像 → 記事内最初のimg）
+    let thumbnailUrl =
+      $('meta[property="og:image"]').attr("content") || "";
+    if (!thumbnailUrl) {
+      const firstImg = bodyEl.find("img").first().attr("src") ||
+        $("article img").first().attr("src") || "";
+      thumbnailUrl = firstImg;
+    }
+    // 相対URLを絶対URLに変換
+    if (thumbnailUrl && !thumbnailUrl.startsWith("http")) {
+      thumbnailUrl = `${BASE_URL}${thumbnailUrl.startsWith("/") ? "" : "/"}${thumbnailUrl}`;
+    }
+
     // 会社IDをURLから抽出
     const companyIdMatch = url.match(/\.(\d+)\.html/);
     const companyIdNum = companyIdMatch ? companyIdMatch[1] : "";
@@ -177,6 +190,7 @@ async function fetchReleaseDetail(url) {
       category: category || null,
       categoryId: mapCategory(category),
       body: body || null,
+      thumbnailUrl: thumbnailUrl || null,
       url,
     };
   } catch (err) {
@@ -223,6 +237,7 @@ function generateMockDataJS(categories, companies, releases) {
     categoryId: r.categoryId,
     regions: ["na", "eu", "asia"],
     publishedAt: r.date || new Date().toISOString().split("T")[0],
+    thumbnailUrl: r.thumbnailUrl || null,
   }));
 
   const code = `const CATEGORIES = ${JSON.stringify(categories, null, 2)};
@@ -278,6 +293,7 @@ async function seedSupabase(releases) {
     category: r.category,
     body: r.body,
     source_url: r.url,
+    thumbnail_url: r.thumbnailUrl || null,
   }));
 
   const { error } = await supabase.from("press_releases").insert(rows);

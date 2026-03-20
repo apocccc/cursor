@@ -619,8 +619,10 @@
           <div class="max-w-5xl mx-auto px-4 pt-6 pb-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div class="md:col-span-2 cursor-pointer group" onclick="navigate('press',{id:'${a.id}'})">
-                <div class="bg-ink/5 h-48 md:h-56 rounded-sm mb-3 flex items-center justify-center">
-                  <span class="text-[11px] text-ink/15 tracking-widest uppercase">Press Release</span>
+                <div class="bg-ink/5 h-48 md:h-56 rounded-sm mb-3 flex items-center justify-center overflow-hidden">
+                  ${a.thumbnailUrl
+                    ? `<img src="${a.thumbnailUrl}" alt="" class="w-full h-full object-cover">`
+                    : `<span class="text-[11px] text-ink/15 tracking-widest uppercase">Press Release</span>`}
                 </div>
                 <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                   ${catLabel(a.categoryId)}
@@ -634,8 +636,10 @@
                 <span class="text-[12px] text-mute">${coA.name}</span>
               </div>
               <div class="cursor-pointer group" onclick="navigate('press',{id:'${b.id}'})">
-                <div class="bg-ink/5 h-32 md:h-56 rounded-sm mb-3 flex items-center justify-center">
-                  <span class="text-[11px] text-ink/15 tracking-widest uppercase">Press Release</span>
+                <div class="bg-ink/5 h-32 md:h-56 rounded-sm mb-3 flex items-center justify-center overflow-hidden">
+                  ${b.thumbnailUrl
+                    ? `<img src="${b.thumbnailUrl}" alt="" class="w-full h-full object-cover">`
+                    : `<span class="text-[11px] text-ink/15 tracking-widest uppercase">Press Release</span>`}
                 </div>
                 <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                   ${catLabel(b.categoryId)}
@@ -660,6 +664,11 @@
         return `
           <a href="#" onclick="event.preventDefault();navigate('press',{id:'${pr.id}'})" class="block group py-3.5 border-b border-line/60 last:border-0">
             <div class="flex items-start gap-4">
+              <div class="w-20 h-14 rounded-sm bg-ink/5 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                ${pr.thumbnailUrl
+                  ? `<img src="${pr.thumbnailUrl}" alt="" class="w-full h-full object-cover">`
+                  : `<span class="text-[8px] text-ink/15 tracking-widest uppercase">PR</span>`}
+              </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
                   ${catLabel(pr.categoryId, false)}
