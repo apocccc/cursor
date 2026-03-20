@@ -2612,10 +2612,9 @@
         ? `<span class="text-[11px] font-mono text-brand">${s}</span>`
         : '<span class="text-[11px] text-mute">未設定</span>';
       try {
-        const token = localStorage.getItem('token');
         const res = await fetch('/api/update-slug', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: prId, title: prTitle, slug }),
         });
         const data = await res.json();

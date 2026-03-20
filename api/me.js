@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     .from("sessions")
     .select("user_id, expires_at")
     .eq("token", token)
-    .single();
+    .maybeSingle();
 
   if (sessionErr || !session) {
     return res.status(401).json({ error: "無効なセッションです" });
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     .from("users")
     .select("id, email, name, company, role, email_verified")
     .eq("id", session.user_id)
-    .single();
+    .maybeSingle();
 
   if (userErr || !user) {
     return res.status(401).json({ error: "ユーザーが見つかりません" });
