@@ -106,7 +106,7 @@ export default async function handler(req, res) {
       email: user.email,
       name: user.name,
       company: user.belong_company || "",
-      role: user.is_admin === "yes" ? "admin" : "user",
+      role: user.is_admin === "yes" ? "admin" : "client",
     },
   });
 }
