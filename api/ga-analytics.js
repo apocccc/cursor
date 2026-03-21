@@ -29,14 +29,12 @@ export default async function handler(req, res) {
   }
 
   // Get slugs for this user's releases (or all for admin)
+  // TODO: データ移行完了後にユーザーフィルターを有効化
   let slugQuery = supabase
     .from("press_releases")
     .select("slug")
     .not("slug", "is", null)
     .neq("slug", "");
-  if (user.is_admin !== "yes") {
-    slugQuery = slugQuery.eq("creator", user.id);
-  }
   const { data: releases } = await slugQuery;
   const slugs = (releases || []).map((r) => r.slug).filter(Boolean);
 
