@@ -170,16 +170,14 @@
           myReleases = dbReleases.map(dbr => ({
             title: dbr.title || '（無題）',
             summary: dbr.company || '',
-            status: 'published',
-            date: dbr.published_at || '',
+            status: dbr.status || 'published',
+            date: dbr.published_at ? dbr.published_at.split('T')[0] : '',
             slug: dbr.slug,
             ga_page_views: dbr.ga_page_views,
             ga_sessions: dbr.ga_sessions,
-            source_url: dbr.source_url,
-            thumbnailUrl: dbr.thumbnail_url,
             langs: ['日本語'],
             regions: [],
-            body: dbr.body || '',
+            body: dbr.content || '',
             videos: [],
           }));
         }
