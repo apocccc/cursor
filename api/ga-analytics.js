@@ -41,9 +41,9 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "GA4環境変数が未設定です" });
   }
 
-  // PEMヘッダー補完
-  if (!privateKey.startsWith("-----BEGIN")) {
-    privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----\n`;
+  // PEMヘッダー補完（必要な場合のみ）
+  if (privateKey && !privateKey.includes("BEGIN PRIVATE KEY")) {
+    privateKey = `-----BEGIN PRIVATE KEY-----\n${privateKey.trim()}\n-----END PRIVATE KEY-----\n`;
   }
 
   // Get slugs for this user's releases (or all for admin)
