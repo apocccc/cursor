@@ -25,15 +25,30 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "無効なセッションです" });
   }
 
-  const { data: releases, error } = await supabase
+  // Fetch user to check role
+  const { data: user } = await supabase
+    .from("users")
+    .select("id, role")
+    .eq("id", session.user_id)
+    .maybeSingle();
+
+  if (!user) return res.status(401).json({ error: "ユーザーが見つかりません" });
+
+  let query = supabase
     .from("press_releases")
-    .select("id, title, slug, ga_page_views, ga_sessions, ga_last_synced_at, published_at")
-    .eq("user_id", session.user_id)
+    .select("id, title, slug, ga_page_views, ga_sessions, ga_last_synced_at, published_at, company, category, source_url, thumbnail_url, user_id")
     .order("published_at", { ascending: false });
+
+  // Admin sees all, others see only their own
+  if (user.role !== "admin") {
+    query = query.eq("user_id", session.user_id);
+  }
+
+  const { data: releases, error } = await query;
 
   if (error) {
     return res.status(500).json({ error: "プレスリリースの取得に失敗しました" });
   }
 
-  return res.status(200).json({ releases: releases || [] });
+  return res.status(200).json({ releases: releases || [], role: user.role });
 }

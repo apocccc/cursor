@@ -150,6 +150,7 @@
 
     let currentUser = JSON.parse(sessionStorage.getItem('aw_user') || 'null');
     let authToken = sessionStorage.getItem('aw_token') || '';
+    let dbReleases = []; // DB press releases loaded from API
     let loginError = '';
     let loginStep = 'email'; // 'email' | 'code'
     let loginEmail = '';
@@ -172,14 +173,31 @@
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (data.releases && data.releases.length > 0) {
-          // Merge GA data into myReleases by matching slug
-          for (const dbRelease of data.releases) {
-            if (!dbRelease.slug) continue;
-            const local = myReleases.find(r => r.slug === dbRelease.slug);
-            if (local) {
-              local.ga_page_views = dbRelease.ga_page_views;
-              local.ga_sessions = dbRelease.ga_sessions;
+        if (data.releases) {
+          dbReleases = data.releases;
+          // For client: add DB releases to myReleases if not already present
+          if (data.role !== 'admin') {
+            for (const dbr of data.releases) {
+              const existing = myReleases.find(r => r.slug === dbr.slug);
+              if (existing) {
+                existing.ga_page_views = dbr.ga_page_views;
+                existing.ga_sessions = dbr.ga_sessions;
+              } else {
+                // Add DB release to myReleases for display
+                myReleases.unshift({
+                  title: dbr.title || '（無題）',
+                  summary: dbr.company || '',
+                  status: 'published',
+                  date: dbr.published_at || '',
+                  slug: dbr.slug,
+                  ga_page_views: dbr.ga_page_views,
+                  ga_sessions: dbr.ga_sessions,
+                  source_url: dbr.source_url,
+                  thumbnailUrl: dbr.thumbnail_url,
+                  langs: ['日本語'],
+                  regions: [],
+                });
+              }
             }
           }
           render();
@@ -2593,12 +2611,12 @@
                 </tr>
               </thead>
               <tbody>
-                ${PRESS_RELEASES.slice(0, 10).map(pr => `
+                ${(dbReleases.length > 0 ? dbReleases : PRESS_RELEASES.slice(0, 10)).map(pr => `
                   <tr class="border-b border-line/60 last:border-0 hover:bg-bg/60">
                     <td class="px-5 py-2.5 truncate max-w-[300px]">${pr.title}</td>
                     <td class="px-5 py-2.5"><span class="text-[11px] text-green-600">公開中</span></td>
                     <td class="px-5 py-2.5">
-                      <span class="slug-cell cursor-pointer" data-pr-id="${pr.id}" data-pr-title="${pr.title.replace(/"/g, '&quot;')}" onclick="startSlugEdit(this, '${pr.id}', '${(pr.slug || '').replace(/'/g, "\\'")}', this.dataset.prTitle)">
+                      <span class="slug-cell cursor-pointer" data-pr-id="${pr.id}" data-pr-title="${(pr.title || '').replace(/"/g, '&quot;')}" onclick="startSlugEdit(this, '${pr.id}', '${(pr.slug || '').replace(/'/g, "\\'")}', this.dataset.prTitle)">
                         ${pr.slug ? `<span class="text-[11px] font-mono text-brand">${pr.slug}</span>` : '<span class="text-[11px] text-mute">未設定</span>'}
                       </span>
                     </td>
