@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js";
+import { supabase, getSessionUser } from "./supabase.js";
 
 // 内部API: トリガーを発火させる
 // 認証済みユーザーからの内部呼び出しを想定
@@ -41,30 +41,12 @@ function cors(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
-async function getUser(req) {
-  const auth = req.headers.authorization || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  if (!token) return null;
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("user_id, expires_at")
-    .eq("token", token)
-    .maybeSingle();
-  if (!session || new Date(session.expires_at) < new Date()) return null;
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, email, name, belong_company, is_admin")
-    .eq("id", session.user_id)
-    .maybeSingle();
-  return user;
-}
-
 export default async function handler(req, res) {
   cors(res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const user = await getUser(req);
+  const user = await getSessionUser(req);
   if (!user) return res.status(401).json({ error: "認証が必要です" });
 
   const { trigger_type, context, recipient_email } = req.body || {};

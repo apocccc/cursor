@@ -1,28 +1,10 @@
-import { supabase } from "./supabase.js";
+import { supabase, getSessionUser } from "./supabase.js";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-}
-
-async function getUser(req) {
-  const auth = req.headers.authorization || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  if (!token) return null;
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("user_id, expires_at")
-    .eq("token", token)
-    .maybeSingle();
-  if (!session || new Date(session.expires_at) < new Date()) return null;
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, email, name, belong_company, is_admin")
-    .eq("id", session.user_id)
-    .maybeSingle();
-  return user;
 }
 
 export default async function handler(req, res) {
@@ -37,7 +19,7 @@ export default async function handler(req, res) {
     }
   } else if (req.method === "POST") {
     // 手動呼び出し（ユーザー認証）
-    const user = await getUser(req);
+    const user = await getSessionUser(req);
     if (!user) return res.status(401).json({ error: "認証が必要です" });
   } else {
     return res.status(405).json({ error: "Method not allowed" });
