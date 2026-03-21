@@ -1720,46 +1720,68 @@
     //  ANALYTICS
     // ══════════════════════════════════════════════════
 
-    // Analytics data — populated from DB releases (no mock data)
-    function generateAnalyticsFromDB() {
-      const days = 30;
-      const today = new Date();
-      const dailyLabels = [];
-      const dailyPV = [];
-      const dailyUU = [];
-      for (let i = days - 1; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        dailyLabels.push(`${d.getMonth()+1}/${d.getDate()}`);
-        dailyPV.push(0);
-        dailyUU.push(0);
-      }
-
-      // Per-slug data from myReleases (DB data)
-      const slugData = myReleases.filter(r => r.slug).map(r => ({
-        id: r.slug,
-        slug: '/press/' + r.slug,
-        title: r.title,
-        company: r.summary || '',
-        regions: r.regions || [],
-        daily: new Array(days).fill(0),
-        totalPV: r.ga_page_views || 0,
-        totalUU: r.ga_sessions || 0,
-        regionBreakdown: {},
-      }));
-
-      const totalPV = slugData.reduce((sum, s) => sum + s.totalPV, 0);
-      const totalUU = slugData.reduce((sum, s) => sum + s.totalUU, 0);
-
-      return { dailyLabels, dailyPV, dailyUU, slugData, referrers: [], countries: [], mediaCoverage: [], totalPV, totalUU, avgDuration: '-', bounceRate: '-' };
-    }
+    // Format GA4 date (YYYYMMDD) to label
+    function ga4DateLabel(d) { return parseInt(d.slice(4,6)) + '/' + parseInt(d.slice(6,8)); }
+    function ga4DateFmt(d) { return d.slice(0,4) + '-' + d.slice(4,6) + '-' + d.slice(6,8); }
 
     let analyticsData = null;
+    let analyticsLoading = false;
     let selectedSlug = null;
     let analyticsRange = '30d';
 
+    async function loadAnalyticsData() {
+      if (!authToken || analyticsLoading) return;
+      analyticsLoading = true;
+      render();
+      try {
+        const res = await fetch('/api/ga-analytics', {
+          headers: { 'Authorization': 'Bearer ' + authToken },
+        });
+        if (!res.ok) { analyticsLoading = false; render(); return; }
+        const data = await res.json();
+
+        // Build analyticsData from API response
+        const dailyLabels = data.daily.map(d => ga4DateLabel(d.date));
+        const dailyPV = data.daily.map(d => d.pv);
+        const dailyUU = data.daily.map(d => d.uu);
+
+        // Per-slug data with title from myReleases
+        const slugData = data.perSlug.map(s => {
+          const release = myReleases.find(r => r.slug === s.slug);
+          return {
+            id: s.slug,
+            slug: s.path,
+            title: release ? release.title : s.slug,
+            company: release ? (release.summary || '') : '',
+            regions: release ? (release.regions || []) : [],
+            daily: s.daily.map(d => d.pv),
+            totalPV: s.totalPV,
+            totalUU: s.totalUU,
+            regionBreakdown: {},
+          };
+        });
+
+        const referrers = data.referrers;
+        const countries = data.countries;
+        const totalPV = data.daily.reduce((sum, d) => sum + d.pv, 0);
+        const totalUU = data.daily.reduce((sum, d) => sum + d.uu, 0);
+
+        analyticsData = { dailyLabels, dailyPV, dailyUU, slugData, referrers, countries, mediaCoverage: [], totalPV, totalUU, avgDuration: '-', bounceRate: '-' };
+      } catch (e) {
+        // Failed to load
+      }
+      analyticsLoading = false;
+      render();
+    }
+
     function renderDashAnalytics() {
-      if (!analyticsData) analyticsData = generateAnalyticsFromDB();
+      if (!analyticsData && !analyticsLoading) { loadAnalyticsData(); }
+      if (analyticsLoading) {
+        return `<div class="px-8 py-20 text-center"><div class="spinner mx-auto mb-3"></div><p class="text-mute text-[13px]">GA4データを読み込み中...</p></div>`;
+      }
+      if (!analyticsData) {
+        return `<div class="px-8 py-20 text-center"><p class="text-mute text-[13px]">データがありません</p><button onclick="navigate('dashboard')" class="mt-3 text-brand text-[12px] hover:underline">&larr; ダッシュボードへ</button></div>`;
+      }
       const d = analyticsData;
 
       const slugRows = d.slugData.map(s => {
@@ -1792,7 +1814,7 @@
 
       const countryRows = d.countries.map(c => `
         <tr class="border-b border-line/60 last:border-0">
-          <td class="py-2 pr-3 text-[12px]">${c.flag} ${c.name}</td>
+          <td class="py-2 pr-3 text-[12px]">${c.country}</td>
           <td class="py-2 px-3 text-right text-[12px] text-sub">${c.pv.toLocaleString()}</td>
           <td class="py-2 pl-3 text-right text-[12px] text-sub">${c.pct}%</td>
         </tr>
@@ -1846,30 +1868,26 @@
             <span class="text-mute">|</span>
             <span class="text-mute">プロパティ: ApocWire Production</span>
             <span class="text-mute">|</span>
-            <span class="text-mute">最終同期: 2026/03/13 09:15</span>
+            <span class="text-mute">最終同期: ${new Date().toLocaleString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
           </div>
 
           <!-- Summary cards -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
             <div class="bg-white border border-line rounded-sm p-4">
-              <p class="text-[11px] text-mute">PV (${analyticsRange === '7d' ? '7日' : '30日'})</p>
+              <p class="text-[11px] text-mute">PV (30日)</p>
               <p class="font-bold text-[22px] mt-1">${d.totalPV.toLocaleString()}</p>
-              <p class="text-[11px] text-green-600 mt-0.5">+12.3% 前期比</p>
             </div>
             <div class="bg-white border border-line rounded-sm p-4">
               <p class="text-[11px] text-mute">ユニークユーザー</p>
               <p class="font-bold text-[22px] mt-1">${d.totalUU.toLocaleString()}</p>
-              <p class="text-[11px] text-green-600 mt-0.5">+8.7% 前期比</p>
             </div>
             <div class="bg-white border border-line rounded-sm p-4">
-              <p class="text-[11px] text-mute">平均滞在時間</p>
-              <p class="font-bold text-[22px] mt-1">${d.avgDuration}</p>
-              <p class="text-[11px] text-mute mt-0.5">前期 1:35</p>
+              <p class="text-[11px] text-mute">記事数</p>
+              <p class="font-bold text-[22px] mt-1">${d.slugData.length}</p>
             </div>
             <div class="bg-white border border-line rounded-sm p-4">
-              <p class="text-[11px] text-mute">直帰率</p>
-              <p class="font-bold text-[22px] mt-1">${d.bounceRate}</p>
-              <p class="text-[11px] text-green-600 mt-0.5">-2.1pt 前期比</p>
+              <p class="text-[11px] text-mute">参照元数</p>
+              <p class="font-bold text-[22px] mt-1">${d.referrers.length}</p>
             </div>
           </div>
 
@@ -2050,7 +2068,6 @@
 
     function setRange(range) {
       analyticsRange = range;
-      analyticsData = generateMockAnalytics();
       render();
       initCharts();
     }
@@ -2124,7 +2141,7 @@
         chartInstances.country = new Chart(countryEl.getContext('2d'), {
           type: 'doughnut',
           data: {
-            labels: [...top5.map(c => c.name), 'その他'],
+            labels: [...top5.map(c => c.country || c.name), 'その他'],
             datasets: [{
               data: [...top5.map(c => c.pv), otherPV],
               backgroundColor: ['#2563eb', '#1a2f5e', '#4a5568', '#999', '#ccc', '#e8e8e8'],
