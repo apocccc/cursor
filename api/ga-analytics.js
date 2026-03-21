@@ -19,7 +19,7 @@ async function getUser(req) {
   if (!session || new Date(session.expires_at) < new Date()) return null;
   const { data: user } = await supabase
     .from("users")
-    .select("id, role")
+    .select("id, is_admin")
     .eq("id", session.user_id)
     .maybeSingle();
   return user;
@@ -52,8 +52,8 @@ export default async function handler(req, res) {
     .select("slug")
     .not("slug", "is", null)
     .neq("slug", "");
-  if (user.role !== "admin") {
-    slugQuery = slugQuery.eq("user_id", user.id);
+  if (user.is_admin !== "yes") {
+    slugQuery = slugQuery.eq("creator", user.id);
   }
   const { data: releases } = await slugQuery;
   const slugs = (releases || []).map((r) => r.slug).filter(Boolean);

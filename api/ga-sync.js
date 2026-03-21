@@ -19,7 +19,7 @@ async function getUser(req) {
   if (!session || new Date(session.expires_at) < new Date()) return null;
   const { data: user } = await supabase
     .from("users")
-    .select("id, email, name, company, role")
+    .select("id, email, name, belong_company, is_admin")
     .eq("id", session.user_id)
     .maybeSingle();
   return user;
@@ -28,10 +28,20 @@ async function getUser(req) {
 export default async function handler(req, res) {
   cors(res);
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const user = await getUser(req);
-  if (!user) return res.status(401).json({ error: "認証が必要です" });
+  if (req.method === "GET") {
+    // Vercel Cron Jobからの呼び出し（CRON_SECRETで認証）
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret || req.headers.authorization !== `Bearer ${cronSecret}`) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+  } else if (req.method === "POST") {
+    // 手動呼び出し（ユーザー認証）
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: "認証が必要です" });
+  } else {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   const propertyId = process.env.GA4_PROPERTY_ID;
   const clientEmail = process.env.GA4_CLIENT_EMAIL;
@@ -41,19 +51,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "GA4環境変数が未設定です" });
   }
 
-  // slugが設定されているプレスリリースを取得
-  const { data: releases, error: fetchErr } = await supabase
-    .from("press_releases")
+  // slugが設定されているpress_dataを取得
+  const { data: pressDataList, error: fetchErr } = await supabase
+    .from("press_data")
     .select("id, slug")
     .not("slug", "is", null)
     .neq("slug", "");
 
   if (fetchErr) {
-    return res.status(500).json({ error: "プレスリリースの取得に失敗しました" });
+    return res.status(500).json({ error: "press_dataの取得に失敗しました" });
   }
 
-  if (!releases || releases.length === 0) {
-    return res.json({ message: "slugが設定されたプレスリリースがありません", updated: 0 });
+  if (!pressDataList || pressDataList.length === 0) {
+    return res.json({ message: "slugが設定されたpress_dataがありません", updated: 0 });
   }
 
   const analyticsClient = new BetaAnalyticsDataClient({
@@ -62,8 +72,8 @@ export default async function handler(req, res) {
 
   let updated = 0;
 
-  for (const release of releases) {
-    const pagePath = `/press/${release.slug}`;
+  for (const pd of pressDataList) {
+    const pagePath = `/press/${pd.slug}`;
     try {
       const [response] = await analyticsClient.runReport({
         property: `properties/${propertyId}`,
@@ -90,21 +100,20 @@ export default async function handler(req, res) {
       }
 
       const { error: updateErr } = await supabase
-        .from("press_releases")
+        .from("press_data")
         .update({
           ga_page_views: pageViews,
           ga_sessions: sessions,
           ga_last_synced_at: new Date().toISOString(),
         })
-        .eq("id", release.id);
+        .eq("id", pd.id);
 
       if (!updateErr) updated++;
     } catch (err) {
-      // エラー時は該当記事のGA数値をnullのまま維持
       console.error('GA4 auth error:', err.message, err.code);
-      console.error(`GA sync error for ${release.slug}:`, err.message);
+      console.error(`GA sync error for ${pd.slug}:`, err.message);
     }
   }
 
-  return res.json({ message: `${updated}件のプレスリリースを更新しました`, updated });
+  return res.json({ message: `${updated}件のpress_dataを更新しました`, updated });
 }

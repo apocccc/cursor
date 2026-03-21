@@ -21,7 +21,7 @@ async function getUser(req) {
   if (!session || new Date(session.expires_at) < new Date()) return null;
   const { data: user } = await supabase
     .from("users")
-    .select("id, email, name, company, role")
+    .select("id, email, name, belong_company, is_admin")
     .eq("id", session.user_id)
     .single();
   return user;
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     let query = supabase.from("orders").select("*").order("created_at", { ascending: false });
     // Non-admin users only see their own orders
-    if (user.role !== "admin") {
+    if (user.is_admin !== "yes") {
       query = query.eq("user_id", user.id);
     }
     const { data, error } = await query;

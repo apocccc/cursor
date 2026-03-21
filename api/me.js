@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   // Fetch user
   const { data: user, error: userErr } = await supabase
     .from("users")
-    .select("id, email, name, company, role, email_verified")
+    .select("id, email, name, belong_company, is_admin, email_verified")
     .eq("id", session.user_id)
     .maybeSingle();
 
@@ -53,8 +53,8 @@ export default async function handler(req, res) {
       id: user.id,
       email: user.email,
       name: user.name,
-      company: user.company,
-      role: user.role,
+      company: user.belong_company,
+      role: user.is_admin === "yes" ? "admin" : "user",
     },
   });
 }

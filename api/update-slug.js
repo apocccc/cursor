@@ -22,7 +22,7 @@ async function getUser(req) {
   if (!session || new Date(session.expires_at) < new Date()) return null;
   const { data: user } = await supabase
     .from("users")
-    .select("id, email, name, company, role")
+    .select("id, email, name, belong_company, is_admin")
     .eq("id", session.user_id)
     .maybeSingle();
   return user;
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
   const user = await getUser(req);
   if (!user) return res.status(401).json({ error: "認証が必要です" });
-  if (user.role !== "admin") return res.status(403).json({ error: "admin権限が必要です" });
+  if (user.is_admin !== "yes") return res.status(403).json({ error: "admin権限が必要です" });
 
   const { id, title, slug } = req.body || {};
   if (!id && !title) return res.status(400).json({ error: "プレスリリースIDまたはタイトルが必要です" });

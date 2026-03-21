@@ -54,7 +54,7 @@ export default async function handler(req, res) {
   // Look up or create user in Supabase
   let { data: user } = await supabase
     .from("users")
-    .select("id, email, name, company, role, email_verified")
+    .select("id, email, name, belong_company, is_admin, email_verified")
     .eq("email", emailLower)
     .single();
 
@@ -66,10 +66,10 @@ export default async function handler(req, res) {
         email: emailLower,
         password_hash: "",
         name: emailLower.split("@")[0],
-        role: "client",
+        is_admin: "no",
         email_verified: true,
       })
-      .select("id, email, name, company, role")
+      .select("id, email, name, belong_company, is_admin")
       .single();
 
     if (insertErr) {
@@ -104,8 +104,8 @@ export default async function handler(req, res) {
       id: user.id,
       email: user.email,
       name: user.name,
-      company: user.company || "",
-      role: user.role,
+      company: user.belong_company || "",
+      role: user.is_admin === "yes" ? "admin" : "user",
     },
   });
 }

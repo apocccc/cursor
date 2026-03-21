@@ -2,9 +2,9 @@ import bcrypt from "bcryptjs";
 import { supabase } from "./supabase.js";
 
 const SEED_USERS = [
-  { email: "client@apoc.co.jp", password: "client123", name: "鈴木 一郎", company: "トヨタ自動車株式会社", role: "client" },
-  { email: "translator@apoc.co.jp", password: "trans123", name: "田中 美咲", company: "", role: "translator" },
-  { email: "admin@apoc.co.jp", password: "admin123", name: "山田 太郎", company: "株式会社APOC", role: "admin" },
+  { email: "client@apoc.co.jp", password: "client123", name: "鈴木 一郎", is_admin: "no" },
+  { email: "translator@apoc.co.jp", password: "trans123", name: "田中 美咲", is_admin: "no" },
+  { email: "admin@apoc.co.jp", password: "admin123", name: "山田 太郎", is_admin: "yes" },
 ];
 
 export default async function handler(req, res) {
@@ -30,15 +30,14 @@ export default async function handler(req, res) {
         email: u.email,
         password_hash: passwordHash,
         name: u.name,
-        company: u.company,
-        role: u.role,
+        is_admin: u.is_admin,
         email_verified: true,
-      }).select("id, email, role").single();
+      }).select("id, email, is_admin").single();
 
       if (error) {
         results.push({ email: u.email, status: "error", error: error.message });
       } else {
-        results.push({ email: u.email, status: "created", role: data.role, id: data.id });
+        results.push({ email: u.email, status: "created", is_admin: data.is_admin, id: data.id });
       }
     } catch (err) {
       results.push({ email: u.email, status: "exception", error: err.message });

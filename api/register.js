@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { supabase } from "./supabase.js";
+import { fireTrigger } from "./trigger-fire.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const SECRET = process.env.OTP_SECRET || process.env.RESEND_API_KEY;
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
     // Update unverified user
     const { error: updateErr } = await supabase
       .from("users")
-      .update({ password_hash: passwordHash, name: name || "", company: company || "" })
+      .update({ password_hash: passwordHash, name: name || "" })
       .eq("id", existing.id);
     if (updateErr) {
       console.error("Supabase update error:", updateErr);
@@ -67,8 +68,7 @@ export default async function handler(req, res) {
       email: emailLower,
       password_hash: passwordHash,
       name: name || "",
-      company: company || "",
-      role: "client",
+      is_admin: "no",
     });
     if (insertErr) {
       console.error("Supabase insert error:", insertErr);
@@ -109,6 +109,13 @@ export default async function handler(req, res) {
     console.error("Resend error:", err);
     return res.status(500).json({ error: "確認メールの送信に失敗しました" });
   }
+
+  // 会員登録通知トリガー (fire-and-forget)
+  fireTrigger("register", {
+    company_name_jp: company || "",
+    representer_name: name || "",
+    email: emailLower,
+  }, emailLower).catch(() => {});
 
   return res.status(200).json({ ok: true });
 }
