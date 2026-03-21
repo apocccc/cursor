@@ -164,6 +164,31 @@
       if (token) sessionStorage.setItem('aw_token', token);
     }
 
+    async function loadMyReleases() {
+      if (!authToken) return;
+      try {
+        const res = await fetch('/api/my-releases', {
+          headers: { 'Authorization': 'Bearer ' + authToken },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.releases && data.releases.length > 0) {
+          // Merge GA data into myReleases by matching slug
+          for (const dbRelease of data.releases) {
+            if (!dbRelease.slug) continue;
+            const local = myReleases.find(r => r.slug === dbRelease.slug);
+            if (local) {
+              local.ga_page_views = dbRelease.ga_page_views;
+              local.ga_sessions = dbRelease.ga_sessions;
+            }
+          }
+          render();
+        }
+      } catch (e) {
+        // GA data loading failed silently
+      }
+    }
+
     function clearSession() {
       currentUser = null;
       authToken = '';
@@ -188,7 +213,7 @@
         loginError = '';
         if (data.user.role === 'translator') navigate('trans-dashboard');
         else if (data.user.role === 'admin') navigate('admin-dashboard');
-        else navigate('dashboard');
+        else { navigate('dashboard'); loadMyReleases(); }
         return;
       } catch (e) {
         loginError = e.message || 'ログインに失敗しました';
@@ -1112,7 +1137,7 @@
                 ${statusBadge(r.status)}
                 ${r.regions ? r.regions.map(id => { const reg = REGIONS.find(x=>x.id===id); return reg ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-line text-sub">${reg.flag} ${reg.name}</span>` : ''; }).join('') : ''}
               </div>
-              <p class="text-[11px] text-mute mb-1">${r.date}${r.ga_page_views != null ? ` · PV ${r.ga_page_views.toLocaleString()}` : ''}</p>
+              <p class="text-[11px] text-mute mb-1">${r.date} · <span class="font-medium">PV: ${r.ga_page_views != null ? r.ga_page_views.toLocaleString() : '-'}</span> · <span class="font-medium">UU: ${r.ga_sessions != null ? r.ga_sessions.toLocaleString() : '-'}</span></p>
               <h3 class="font-bold text-[14px] leading-snug mb-1.5 line-clamp-2">${r.title || '（無題）'}</h3>
               ${r.source_url ? `<a href="${r.source_url}" target="_blank" class="text-[11px] text-brand hover:underline truncate block">配信URL</a>` : '<span class="text-[11px] text-mute">未発行</span>'}
             </div>
@@ -1182,15 +1207,14 @@
       const btn = document.getElementById('btn-ga-sync');
       if (btn) { btn.disabled = true; btn.textContent = '同期中...'; }
       try {
-        const token = localStorage.getItem('token');
         const res = await fetch('/api/ga-sync', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
         });
         const data = await res.json();
         if (res.ok) {
           alert(`GA同期完了: ${data.updated}件更新`);
-          render();
+          await loadMyReleases();
         } else {
           alert(`エラー: ${data.error}`);
         }
@@ -3434,7 +3458,7 @@
     history.replaceState({ page: currentPage, params: currentParams }, '', pageToUrl(currentPage, currentParams));
     render();
     // Verify session in background (non-blocking)
-    restoreSession().then(() => render());
+    restoreSession().then(() => { render(); loadMyReleases(); });
   </script>
 </body>
 </html>
