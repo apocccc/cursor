@@ -196,15 +196,15 @@
         if (data.role !== 'admin') {
           myReleases = dbReleases.map(dbr => ({
             title: dbr.title || '（無題）',
-            summary: dbr.company || '',
+            summary: dbr.company || dbr.belong_company || '',
             status: dbr.status || 'published',
-            date: dbr.published_at ? dbr.published_at.split('T')[0] : '',
+            date: (dbr.published_at || dbr.created_at || '').split('T')[0],
             slug: dbr.slug,
             ga_page_views: dbr.ga_page_views,
             ga_sessions: dbr.ga_sessions,
             langs: ['日本語'],
             regions: [],
-            body: dbr.content || '',
+            body: dbr.content || dbr.text || '',
             videos: [],
           }));
         }

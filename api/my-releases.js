@@ -25,30 +25,54 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "無効なセッションです" });
   }
 
-  // Fetch user to check role
-  const { data: user } = await supabase
+  // Fetch user to check role (new schema: is_admin, fallback: role)
+  let { data: user } = await supabase
     .from("users")
     .select("id, is_admin")
     .eq("id", session.user_id)
     .maybeSingle();
 
-  if (!user) return res.status(401).json({ error: "ユーザーが見つかりません" });
+  let isAdmin = false;
+  if (!user) {
+    // Fallback: old schema
+    ({ data: user } = await supabase
+      .from("users")
+      .select("id, role")
+      .eq("id", session.user_id)
+      .maybeSingle());
+    if (!user) return res.status(401).json({ error: "ユーザーが見つかりません" });
+    isAdmin = user.role === "admin";
+  } else {
+    isAdmin = user.is_admin === "yes";
+  }
 
-  let query = supabase
+  // Try new schema columns first, fallback to old
+  let { data: releases, error } = await supabase
     .from("press_releases")
     .select("id, title, slug, belong_company, status, text, lead_text, creator, created_at, modified_at")
     .order("created_at", { ascending: false });
 
-  // Admin sees all, others see only their own
-  if (user.is_admin !== "yes") {
-    query = query.eq("creator", session.user_id);
-  }
+  if (error && (error.message.includes("belong_company") || error.message.includes("creator"))) {
+    // Fallback: old schema columns
+    ({ data: releases, error } = await supabase
+      .from("press_releases")
+      .select("id, title, slug, company, status, content, user_id, published_at, ga_page_views, ga_sessions, ga_last_synced_at")
+      .order("published_at", { ascending: false }));
 
-  const { data: releases, error } = await query;
+    // TODO: データ移行完了後にユーザーフィルターを有効化
+    // if (!isAdmin && releases) {
+    //   releases = releases.filter(r => r.user_id === session.user_id);
+    // }
+  } else {
+    // TODO: データ移行完了後にユーザーフィルターを有効化
+    // if (!isAdmin && releases) {
+    //   releases = releases.filter(r => r.creator === session.user_id);
+    // }
+  }
 
   if (error) {
     return res.status(500).json({ error: "プレスリリースの取得に失敗しました", detail: error.message });
   }
 
-  return res.status(200).json({ releases: releases || [], role: user.is_admin === "yes" ? "admin" : "client" });
+  return res.status(200).json({ releases: releases || [], role: isAdmin ? "admin" : "client" });
 }
