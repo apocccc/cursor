@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
   let query = supabase
     .from("press_releases")
-    .select("id, title, slug, ga_page_views, ga_sessions, ga_last_synced_at, published_at, company, category, source_url, thumbnail_url, user_id, body")
+    .select("id, title, slug, ga_page_views, ga_sessions, ga_last_synced_at, published_at, company, source_url, thumbnail_url, user_id")
     .order("published_at", { ascending: false });
 
   // Admin sees all, others see only their own
