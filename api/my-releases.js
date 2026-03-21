@@ -47,7 +47,7 @@ export default async function handler(req, res) {
   const { data: releases, error } = await query;
 
   if (error) {
-    return res.status(500).json({ error: "プレスリリースの取得に失敗しました" });
+    return res.status(500).json({ error: "プレスリリースの取得に失敗しました", detail: error.message });
   }
 
   return res.status(200).json({ releases: releases || [], role: user.role });
