@@ -137,16 +137,7 @@
     // ══════════════════════════════════════════════════
     //  USER ACCOUNTS & AUTH
     // ══════════════════════════════════════════════════
-    const USERS = [
-      { id: 'u1', email: 'toyota@example.com', password: 'toyota123', role: 'client', name: '鈴木 一郎', company: 'トヨタ自動車株式会社', translatorId: null },
-      { id: 'u2', email: 'sony@example.com', password: 'sony123', role: 'client', name: '佐藤 花子', company: '株式会社ソニーグループ', translatorId: null },
-      { id: 'u3', email: 'tanaka@example.com', password: 'tanaka123', role: 'translator', name: '田中 美咲', company: null, translatorId: 't1' },
-      { id: 'u4', email: 'smith@example.com', password: 'smith123', role: 'translator', name: 'John Smith', company: null, translatorId: 't2' },
-      { id: 'u5', email: 'li@example.com', password: 'li123', role: 'translator', name: '李 雪華', company: null, translatorId: 't3' },
-      { id: 'u6', email: 'muller@example.com', password: 'muller123', role: 'translator', name: 'Anna Müller', company: null, translatorId: 't4' },
-      { id: 'u7', email: 'kim@example.com', password: 'kim123', role: 'translator', name: '김 수진', company: null, translatorId: 't5' },
-      { id: 'u8', email: 'admin@apoc.co.jp', password: 'apoc123', role: 'admin', name: '山田 太郎', company: '株式会社APOC', translatorId: null },
-    ];
+    const USERS = [];
 
     let currentUser = JSON.parse(sessionStorage.getItem('aw_user') || 'null');
     let authToken = sessionStorage.getItem('aw_token') || '';
@@ -192,6 +183,7 @@
             videos: [],
           }));
         }
+        analyticsData = null; // Reset so next render uses fresh DB data
         render();
       } catch (e) {
         // DB fetch failed — myReleases stays empty
@@ -822,7 +814,7 @@
       }
 
       const accountRows = [
-        { label: '事業者', accounts: [{ email: 'client@apoc.co.jp', password: 'client123', name: '鈴木 一郎', company: 'トヨタ自動車株式会社' }] },
+        { label: '事業者', accounts: [{ email: 'client@apoc.co.jp', password: 'client123', name: '鈴木 一郎', company: '' }] },
         { label: '翻訳者', accounts: [{ email: 'translator@apoc.co.jp', password: 'trans123', name: '田中 美咲', company: '' }] },
         { label: 'APOC管理', accounts: [{ email: 'admin@apoc.co.jp', password: 'admin123', name: '山田 太郎', company: '株式会社APOC' }] },
       ];
@@ -1133,8 +1125,8 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
               ${metricCard('ページビュー', pvDisplay, '期間内の合計ページ閲覧数')}
               ${metricCard('印刷者数', sessionsDisplay, 'セッション数（訪問者数）')}
-              ${metricCard('転載数', '522', '他メディアへの転載回数')}
-              ${metricCard('記事化数・取材依頼数', '3', '記事化および取材依頼の件数')}
+              ${metricCard('転載数', '-', '他メディアへの転載回数')}
+              ${metricCard('記事化数・取材依頼数', '-', '記事化および取材依頼の件数')}
             </div>
           </div>
 
@@ -1730,19 +1722,10 @@
     //  ANALYTICS
     // ══════════════════════════════════════════════════
 
-    // Generate mock GA-like data
-    function generateMockAnalytics() {
-      const today = new Date(2026, 2, 13); // 2026-03-13
+    // Analytics data — populated from DB releases (no mock data)
+    function generateAnalyticsFromDB() {
       const days = 30;
-      const slugs = PRESS_RELEASES.slice(0, 6).map(pr => ({
-        id: pr.id,
-        slug: '/press/' + pr.id,
-        title: pr.title,
-        company: getCompanyById(pr.companyId)?.name,
-        regions: pr.regions || [],
-      }));
-
-      // Daily totals
+      const today = new Date();
       const dailyLabels = [];
       const dailyPV = [];
       const dailyUU = [];
@@ -1750,92 +1733,27 @@
         const d = new Date(today);
         d.setDate(d.getDate() - i);
         dailyLabels.push(`${d.getMonth()+1}/${d.getDate()}`);
-        const base = 120 + Math.floor(Math.random() * 80);
-        const weekday = d.getDay();
-        const factor = (weekday === 0 || weekday === 6) ? 0.6 : 1;
-        const pv = Math.floor(base * factor + (i < 5 ? 50 : 0));
-        dailyPV.push(pv);
-        dailyUU.push(Math.floor(pv * (0.55 + Math.random() * 0.15)));
+        dailyPV.push(0);
+        dailyUU.push(0);
       }
 
-      // Per-slug data
-      const slugData = slugs.map((s, idx) => {
-        const basePV = [320, 280, 210, 190, 150, 120][idx] || 100;
-        const daily = [];
-        for (let i = days - 1; i >= 0; i--) {
-          const d = new Date(today);
-          d.setDate(d.getDate() - i);
-          const weekday = d.getDay();
-          const factor = (weekday === 0 || weekday === 6) ? 0.5 : 1;
-          const freshBoost = (i < 3 && idx < 2) ? 2.5 : (i < 7 && idx < 3) ? 1.5 : 1;
-          daily.push(Math.floor((basePV / days) * factor * freshBoost * (0.7 + Math.random() * 0.6)));
-        }
-        const totalPV = daily.reduce((a, b) => a + b, 0);
-        const totalUU = Math.floor(totalPV * (0.55 + Math.random() * 0.15));
+      // Per-slug data from myReleases (DB data)
+      const slugData = myReleases.filter(r => r.slug).map(r => ({
+        id: r.slug,
+        slug: '/press/' + r.slug,
+        title: r.title,
+        company: r.summary || '',
+        regions: r.regions || [],
+        daily: new Array(days).fill(0),
+        totalPV: r.ga_page_views || 0,
+        totalUU: r.ga_sessions || 0,
+        regionBreakdown: {},
+      }));
 
-        // Region breakdown
-        const regionBreakdown = {};
-        const rids = s.regions.length > 0 ? s.regions : ['na'];
-        const shares = rids.map(() => Math.random());
-        const shareSum = shares.reduce((a, b) => a + b, 0);
-        rids.forEach((rid, j) => {
-          regionBreakdown[rid] = Math.floor(totalPV * (shares[j] / shareSum));
-        });
+      const totalPV = slugData.reduce((sum, s) => sum + s.totalPV, 0);
+      const totalUU = slugData.reduce((sum, s) => sum + s.totalUU, 0);
 
-        return { ...s, daily, totalPV, totalUU, regionBreakdown };
-      });
-
-      // Referrer data
-      const referrers = [
-        { source: 'google / organic', sessions: 1842, pv: 3210 },
-        { source: 'twitter.com / social', sessions: 956, pv: 1580 },
-        { source: 'facebook.com / social', sessions: 623, pv: 890 },
-        { source: '(direct) / (none)', sessions: 512, pv: 740 },
-        { source: 'linkedin.com / social', sessions: 389, pv: 520 },
-        { source: 'news.ycombinator.com / referral', sessions: 234, pv: 410 },
-        { source: 'pr-newswire.com / referral', sessions: 178, pv: 290 },
-        { source: 'bing / organic', sessions: 145, pv: 210 },
-      ];
-
-      // Country data
-      const countries = [
-        { name: 'アメリカ', flag: '🇺🇸', pv: 2840, pct: 28.4 },
-        { name: '日本', flag: '🇯🇵', pv: 2310, pct: 23.1 },
-        { name: 'イギリス', flag: '🇬🇧', pv: 1120, pct: 11.2 },
-        { name: 'ドイツ', flag: '🇩🇪', pv: 890, pct: 8.9 },
-        { name: 'シンガポール', flag: '🇸🇬', pv: 670, pct: 6.7 },
-        { name: '韓国', flag: '🇰🇷', pv: 540, pct: 5.4 },
-        { name: 'カナダ', flag: '🇨🇦', pv: 420, pct: 4.2 },
-        { name: 'フランス', flag: '🇫🇷', pv: 380, pct: 3.8 },
-        { name: 'その他', flag: '🌐', pv: 830, pct: 8.3 },
-      ];
-
-      const totalPV = dailyPV.reduce((a, b) => a + b, 0);
-      const totalUU = dailyUU.reduce((a, b) => a + b, 0);
-      const avgDuration = '1:42';
-      const bounceRate = '38.2%';
-
-      // Media coverage (per-release pickup list)
-      const mediaCoverage = [
-        { slug: '/press/2', release: 'shu uemura ポップアップイベント', media: 'WWD Japan', url: 'https://wwdjapan.com/articles/shu-uemura-sento-popup', region: 'asia', lang: 'en', date: '2026-03-18', type: 'ビューティー' },
-        { slug: '/press/2', release: 'shu uemura ポップアップイベント', media: 'Allure', url: 'https://allure.com/story/shu-uemura-sento-popup-tokyo', region: 'na', lang: 'en', date: '2026-03-18', type: 'ビューティー' },
-        { slug: '/press/3', release: 'XTuber 商標ガイドライン策定', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/18/pandora-xtuber-guidelines', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
-        { slug: '/press/3', release: 'XTuber 商標ガイドライン策定', media: 'The Verge', url: 'https://theverge.com/2026/3/18/pandora-xtuber-trademark', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
-        { slug: '/press/4', release: 'にじさんじ Spring Party 2026', media: 'Anime News Network', url: 'https://animenewsnetwork.com/news/nijisanji-spring-party-2026', region: 'na', lang: 'en', date: '2026-03-18', type: 'エンタメ' },
-        { slug: '/press/4', release: 'にじさんじ Spring Party 2026', media: 'Korea Herald', url: 'https://koreaherald.com/nijisanji-spring-party-tokyo-dome', region: 'kr', lang: 'ko', date: '2026-03-18', type: 'エンタメ' },
-        { slug: '/press/5', release: 'WebRelease 2 マイクロソフト連携', media: 'TechCrunch', url: 'https://techcrunch.com/2026/03/18/frameworks-webrelease-microsoft', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
-        { slug: '/press/5', release: 'WebRelease 2 マイクロソフト連携', media: 'ZDNet', url: 'https://zdnet.com/article/frameworks-software-webrelease-2', region: 'na', lang: 'en', date: '2026-03-18', type: 'テック' },
-        { slug: '/press/6', release: '春酒のご紹介', media: 'Food Navigator', url: 'https://foodnavigator-asia.com/sake-spring-collection-2026', region: 'asia', lang: 'en', date: '2026-03-18', type: '食品' },
-        { slug: '/press/6', release: '春酒のご紹介', media: 'The Drinks Business', url: 'https://thedrinksbusiness.com/sake-spring-japan-2026', region: 'eu', lang: 'en', date: '2026-03-18', type: '食品' },
-        { slug: '/press/7', release: 'ホシザキグローバルサイト新設', media: 'Reuters', url: 'https://reuters.com/business/hoshizaki-global-site-launch', region: 'eu', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
-        { slug: '/press/7', release: 'ホシザキグローバルサイト新設', media: 'Nikkei Asia', url: 'https://asia.nikkei.com/hoshizaki-global-website', region: 'asia', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
-        { slug: '/press/9', release: 'ベリーベスト法律事務所 AI導入', media: 'Bloomberg Law', url: 'https://bloomberglaw.com/verybest-legalscape-ai-adoption', region: 'na', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
-        { slug: '/press/9', release: 'ベリーベスト法律事務所 AI導入', media: 'Financial Times', url: 'https://ft.com/content/verybest-ai-legal-japan', region: 'eu', lang: 'en', date: '2026-03-18', type: 'ビジネス' },
-        { slug: '/press/10', release: 'ロジクラ freeeグループイン', media: 'Tech in Asia', url: 'https://techinasia.com/logikura-freee-acquisition', region: 'asia', lang: 'en', date: '2026-03-18', type: 'テック' },
-        { slug: '/press/10', release: 'ロジクラ freeeグループイン', media: 'DealStreetAsia', url: 'https://dealstreetasia.com/stories/freee-logikura', region: 'asia', lang: 'en', date: '2026-03-18', type: 'テック' },
-      ];
-
-      return { dailyLabels, dailyPV, dailyUU, slugData, referrers, countries, mediaCoverage, totalPV, totalUU, avgDuration, bounceRate };
+      return { dailyLabels, dailyPV, dailyUU, slugData, referrers: [], countries: [], mediaCoverage: [], totalPV, totalUU, avgDuration: '-', bounceRate: '-' };
     }
 
     let analyticsData = null;
@@ -1843,7 +1761,7 @@
     let analyticsRange = '30d';
 
     function renderDashAnalytics() {
-      if (!analyticsData) analyticsData = generateMockAnalytics();
+      if (!analyticsData) analyticsData = generateAnalyticsFromDB();
       const d = analyticsData;
 
       const slugRows = d.slugData.map(s => {
@@ -1864,7 +1782,7 @@
               }).join('')}</div>
             </td>
           </tr>`;
-      }).join('');
+      }).join('') || '<tr><td colspan="4" class="py-8 text-center text-mute text-[12px]">データがありません</td></tr>';
 
       const referrerRows = d.referrers.map(r => `
         <tr class="border-b border-line/60 last:border-0">
@@ -1872,7 +1790,7 @@
           <td class="py-2 px-3 text-right text-[12px] text-sub">${r.sessions.toLocaleString()}</td>
           <td class="py-2 pl-3 text-right text-[12px] text-sub">${r.pv.toLocaleString()}</td>
         </tr>
-      `).join('');
+      `).join('') || '<tr><td colspan="3" class="py-4 text-center text-mute text-[12px]">データがありません</td></tr>';
 
       const countryRows = d.countries.map(c => `
         <tr class="border-b border-line/60 last:border-0">
@@ -1880,7 +1798,7 @@
           <td class="py-2 px-3 text-right text-[12px] text-sub">${c.pv.toLocaleString()}</td>
           <td class="py-2 pl-3 text-right text-[12px] text-sub">${c.pct}%</td>
         </tr>
-      `).join('');
+      `).join('') || '<tr><td colspan="3" class="py-4 text-center text-mute text-[12px]">データがありません</td></tr>';
 
       // If a slug is selected, show its region breakdown
       let selectedDetail = '';
@@ -2239,16 +2157,7 @@
       { id: 't5', name: '김 수진', nameEn: 'Sujin Kim', langs: ['ko', 'en'], rating: 4.8, jobs: 38, status: 'away' },
     ];
 
-    let translationOrders = [
-      { id: 'TO-001', releaseTitle: '新型燃料電池車「MIRAI NEXT」を2026年秋に全世界同時発売', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'in_progress', assignee: 't1', deadline: '2026/03/14', wordCount: 1200, createdAt: '2026/03/12', body: '■ 概要\n新型MIRAI NEXTは、第3世代FCスタックを搭載し航続距離1,000kmを実現。\n\n■ 主な特徴\n・航続距離：1,050km（WLTCモード）\n・水素充填時間：約3分\n・新開発の軽量カーボンタンク採用\n・OTAアップデート対応', translatedBody: '' },
-      { id: 'TO-002', releaseTitle: '新型燃料電池車「MIRAI NEXT」を2026年秋に全世界同時発売', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'zh', status: 'pending', assignee: null, deadline: '2026/03/15', wordCount: 1200, createdAt: '2026/03/12', body: '■ 概要\n新型MIRAI NEXTは、第3世代FCスタックを搭載し航続距離1,000kmを実現。\n\n■ 主な特徴\n・航続距離：1,050km（WLTCモード）\n・水素充填時間：約3分\n・新開発の軽量カーボンタンク採用\n・OTAアップデート対応', translatedBody: '' },
-      { id: 'TO-003', releaseTitle: 'トヨタとBMW、全固体電池の共同量産に向けた合弁会社を設立', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'completed', assignee: 't2', deadline: '2026/03/11', wordCount: 980, createdAt: '2026/03/09', body: '■ 合弁会社概要\n・社名：Toyota-BMW Solid State Battery GmbH\n・所在地：ドイツ・ミュンヘン\n・出資比率：トヨタ60% / BMW 40%\n・投資総額：5,000億円', translatedBody: '■ Joint Venture Overview\n- Company Name: Toyota-BMW Solid State Battery GmbH\n- Location: Munich, Germany\n- Equity Split: Toyota 60% / BMW 40%\n- Total Investment: ¥500 billion' },
-      { id: 'TO-004', releaseTitle: 'トヨタとBMW、全固体電池の共同量産に向けた合弁会社を設立', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'de', status: 'in_progress', assignee: 't4', deadline: '2026/03/14', wordCount: 980, createdAt: '2026/03/09', body: '■ 合弁会社概要\n・社名：Toyota-BMW Solid State Battery GmbH\n・所在地：ドイツ・ミュンヘン\n・出資比率：トヨタ60% / BMW 40%\n・投資総額：5,000億円', translatedBody: '' },
-      { id: 'TO-005', releaseTitle: '自動運転レベル4対応「Toyota Chauffeur」が米カリフォルニア州で公道走行許可を取得', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'pending', assignee: null, deadline: '2026/03/16', wordCount: 850, createdAt: '2026/03/13', body: '■ 許可内容\n・走行エリア：サンフランシスコ市内全域\n・時間帯制限なし（24時間走行可能）\n・乗客を乗せた商用運行を許可', translatedBody: '' },
-      { id: 'TO-006', releaseTitle: 'Woven City、第一期居住者500名の入居を2026年夏に開始', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'in_progress', assignee: 't1', deadline: '2026/03/15', wordCount: 760, createdAt: '2026/03/11', body: '■ Woven City 第一期概要\n・居住者：約500名（トヨタ社員・家族・研究者）\n・住居数：約150戸\n・実証テーマ：自動運転、ロボティクス、AI、スマートホーム、水素エネルギー', translatedBody: '' },
-      { id: 'TO-007', releaseTitle: '月面探査車「LUNAR CRUISER」の最終試作機が完成', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'review', assignee: 't2', deadline: '2026/03/12', wordCount: 920, createdAt: '2026/03/08', body: '■ LUNAR CRUISER概要\n・全長：6.0m × 全幅：5.2m × 全高：3.8m\n・乗員：2名（最大4名）\n・航続距離：10,000km以上', translatedBody: '■ LUNAR CRUISER Overview\n- Dimensions: 6.0m L × 5.2m W × 3.8m H\n- Crew: 2 (max 4)\n- Range: Over 10,000 km\n- Hybrid fuel cell + solar power system' },
-      { id: 'TO-008', releaseTitle: 'トヨタ・リサーチ・インスティテュート、大規模言語モデルを活用した車両設計AIを発表', client: 'トヨタ自動車株式会社', sourceLang: 'ja', targetLang: 'en', status: 'completed', assignee: 't1', deadline: '2026/03/10', wordCount: 680, createdAt: '2026/03/07', body: '■ 技術概要\n・自然言語による車両デザイン指示\n・AIが3Dモデルを10分以内に自動生成', translatedBody: '■ Technology Overview\n- Natural language vehicle design commands\n- AI generates 3D models within 10 minutes\n- Simultaneous aerodynamic simulation\n- 60% reduction in development time vs. conventional methods' },
-    ];
+    let translationOrders = [];
 
     const orderStatusLabel = (s) => ({
       pending: { text: '未着手', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
@@ -2805,13 +2714,7 @@
     //  ADMIN CLIENTS
     // ══════════════════════════════════════════════════
     function renderAdminClients() {
-      const clients = [
-        { name: 'トヨタ自動車株式会社', nameEn: 'Toyota Motor Corporation', plan: 'Enterprise', releases: 10, orders: 8, joined: '2025/06/01', status: 'active' },
-        { name: '株式会社ソニーグループ', nameEn: 'Sony Group Corporation', plan: 'Business', releases: 4, orders: 6, joined: '2025/09/15', status: 'active' },
-        { name: '株式会社メルカリ', nameEn: 'Mercari, Inc.', plan: 'Starter', releases: 2, orders: 3, joined: '2026/01/10', status: 'active' },
-        { name: 'パナソニック株式会社', nameEn: 'Panasonic Corporation', plan: 'Business', releases: 5, orders: 4, joined: '2025/11/20', status: 'active' },
-        { name: '株式会社任天堂', nameEn: 'Nintendo Co., Ltd.', plan: 'Enterprise', releases: 3, orders: 5, joined: '2025/08/01', status: 'paused' },
-      ];
+      const clients = [];
 
       const planColor = { Enterprise: 'bg-brand/10 text-brand border-brand/20', Business: 'bg-blue-50 text-blue-700 border-blue-200', Starter: 'bg-ink/5 text-sub border-line' };
 
@@ -2838,7 +2741,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${clients.map(c => `
+                ${clients.length > 0 ? clients.map(c => `
                   <tr class="border-b border-line/60 last:border-0">
                     <td class="py-3 px-4">
                       <p class="text-[12px] font-medium">${c.name}</p>
@@ -2850,7 +2753,7 @@
                     <td class="py-3 px-4 text-[12px] text-mute">${c.joined}</td>
                     <td class="py-3 px-4"><span class="text-[10px] px-1.5 py-0.5 border font-medium ${c.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}">${c.status === 'active' ? '利用中' : '休止中'}</span></td>
                   </tr>
-                `).join('')}
+                `).join('') : '<tr><td colspan="6" class="py-8 text-center text-mute text-[12px]">データがありません</td></tr>'}
               </tbody>
             </table>
           </div>
