@@ -173,37 +173,28 @@
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (data.releases) {
-          dbReleases = data.releases;
-          // For client: add DB releases to myReleases if not already present
-          if (data.role !== 'admin') {
-            for (const dbr of data.releases) {
-              const existing = myReleases.find(r => r.slug === dbr.slug);
-              if (existing) {
-                existing.ga_page_views = dbr.ga_page_views;
-                existing.ga_sessions = dbr.ga_sessions;
-              } else {
-                // Add DB release to myReleases for display
-                myReleases.unshift({
-                  title: dbr.title || '（無題）',
-                  summary: dbr.company || '',
-                  status: 'published',
-                  date: dbr.published_at || '',
-                  slug: dbr.slug,
-                  ga_page_views: dbr.ga_page_views,
-                  ga_sessions: dbr.ga_sessions,
-                  source_url: dbr.source_url,
-                  thumbnailUrl: dbr.thumbnail_url,
-                  langs: ['日本語'],
-                  regions: [],
-                });
-              }
-            }
-          }
-          render();
+        dbReleases = data.releases || [];
+        // For client: populate myReleases entirely from DB
+        if (data.role !== 'admin') {
+          myReleases = dbReleases.map(dbr => ({
+            title: dbr.title || '（無題）',
+            summary: dbr.company || '',
+            status: 'published',
+            date: dbr.published_at || '',
+            slug: dbr.slug,
+            ga_page_views: dbr.ga_page_views,
+            ga_sessions: dbr.ga_sessions,
+            source_url: dbr.source_url,
+            thumbnailUrl: dbr.thumbnail_url,
+            langs: ['日本語'],
+            regions: [],
+            body: dbr.body || '',
+            videos: [],
+          }));
         }
+        render();
       } catch (e) {
-        // GA data loading failed silently
+        // DB fetch failed — myReleases stays empty
       }
     }
 
@@ -364,63 +355,7 @@
     let currentPage = pathToPage(location.pathname);
     let currentParams = parseUrlParams();
     if (currentParams.category) selectedCategory = currentParams.category;
-    let myReleases = [
-      { title: '新型燃料電池車「MIRAI NEXT」を2026年秋に全世界同時発売', summary: '次世代FCスタック搭載で航続距離1,000km超を実現。北米・欧州・アジアで同時ローンチ。', status: 'published', date: '2026/03/12', langs: ['日本語', 'English', '中文'], regions: ['na', 'eu', 'asia'], categoryId: 'manufacturing',
-        body: '■ 概要\n新型MIRAI NEXTは、第3世代FCスタックを搭載し航続距離1,000kmを実現。\n\n■ 主な特徴\n・航続距離：1,050km（WLTCモード）\n・水素充填時間：約3分\n・新開発の軽量カーボンタンク採用\n・OTAアップデート対応',
-        videos: [
-          { platform: 'youtube', title: 'MIRAI NEXT ワールドプレミア｜トヨタニュースルーム', url: 'https://youtube.com/watch?v=example1', views: 284000, date: '2026/03/12' },
-          { platform: 'youtube', title: 'MIRAI NEXT - The Future of Hydrogen (EN)', url: 'https://youtube.com/watch?v=example1en', views: 156000, date: '2026/03/12' },
-          { platform: 'tiktok', title: 'MIRAI NEXT 60秒でわかる新型FCV #トヨタ #水素', url: 'https://tiktok.com/@toyotajp/video/example1', views: 520000, date: '2026/03/12' },
-        ]},
-      { title: 'トヨタとBMW、全固体電池の共同量産に向けた合弁会社を設立', summary: '2028年の量産開始を目指し、総額5,000億円を投資。EV向け全固体電池の世界標準化を推進。', status: 'published', date: '2026/03/10', langs: ['日本語', 'English', 'Deutsch'], regions: ['na', 'eu'], categoryId: 'manufacturing',
-        body: '■ 合弁会社概要\n・社名：Toyota-BMW Solid State Battery GmbH\n・所在地：ドイツ・ミュンヘン\n・出資比率：トヨタ60% / BMW 40%\n・投資総額：5,000億円\n\n■ 技術目標\n・エネルギー密度：現行リチウムイオン比2.5倍\n・充電時間：10分で80%充電\n・2028年に量産開始予定',
-        videos: [
-          { platform: 'youtube', title: 'トヨタ×BMW 全固体電池プロジェクト発表会見', url: 'https://youtube.com/watch?v=example2', views: 98000, date: '2026/03/10' },
-          { platform: 'instagram', title: '全固体電池の仕組みを解説 #EV #固体電池', url: 'https://instagram.com/reel/example2', views: 340000, date: '2026/03/10' },
-        ]},
-      { title: '自動運転レベル4対応「Toyota Chauffeur」が米カリフォルニア州で公道走行許可を取得', summary: '一般道を含む自動運転走行が可能に。2026年内にサンフランシスコでライドシェアサービスを開始予定。', status: 'published', date: '2026/03/08', langs: ['日本語', 'English'], regions: ['na'], categoryId: 'it',
-        body: '■ 許可内容\n・走行エリア：サンフランシスコ市内全域\n・時間帯制限なし（24時間走行可能）\n・乗客を乗せた商用運行を許可\n\n■ サービス計画\n2026年Q4にライドシェアサービスを開始予定。',
-        videos: [
-          { platform: 'youtube', title: 'Toyota Chauffeur: Level 4 Autonomous Driving in SF', url: 'https://youtube.com/watch?v=example3', views: 430000, date: '2026/03/08' },
-          { platform: 'twitter', title: 'サンフランシスコ公道走行テスト映像を公開', url: 'https://x.com/ToyotaMotorCorp/status/example3', views: 89000, date: '2026/03/08' },
-        ]},
-      { title: 'トヨタ、東南アジア5カ国でEV充電インフラ整備プロジェクトを始動', summary: 'タイ・インドネシア・ベトナム・フィリピン・マレーシアに計10,000基の急速充電器を設置。', status: 'published', date: '2026/03/06', langs: ['日本語', 'English'], regions: ['asia'], categoryId: 'manufacturing',
-        body: '■ プロジェクト概要\n・対象国：タイ、インドネシア、ベトナム、フィリピン、マレーシア\n・設置数：計10,000基\n・投資額：約800億円\n・完了目標：2028年末',
-        videos: [
-          { platform: 'youtube', title: 'Toyota ASEAN EV Charging Network プロジェクト紹介', url: 'https://youtube.com/watch?v=example4', views: 45000, date: '2026/03/06' },
-        ]},
-      { title: 'Woven City、第一期居住者500名の入居を2026年夏に開始', summary: '静岡県裾野市のスマートシティ実証都市で、自動運転・ロボティクス・AIの統合実験を本格化。', status: 'published', date: '2026/03/04', langs: ['日本語', 'English'], regions: ['na', 'eu', 'asia'], categoryId: 'it',
-        body: '■ Woven City 第一期概要\n・居住者：約500名（トヨタ社員・家族・研究者）\n・住居数：約150戸\n・実証テーマ：自動運転、ロボティクス、AI、スマートホーム、水素エネルギー',
-        videos: [
-          { platform: 'youtube', title: 'Woven City 最新映像 - 未来の街が動き出す', url: 'https://youtube.com/watch?v=example5', views: 1200000, date: '2026/03/04' },
-          { platform: 'tiktok', title: '未来都市Woven Cityに住んでみた #WovenCity #トヨタ', url: 'https://tiktok.com/@toyotajp/video/example5', views: 2800000, date: '2026/03/05' },
-          { platform: 'instagram', title: 'Woven City 空撮ツアー', url: 'https://instagram.com/reel/example5', views: 670000, date: '2026/03/04' },
-        ]},
-      { title: 'トヨタ、水素エンジン搭載の商用トラックを欧州市場に初投入', summary: '水素燃焼エンジンを搭載した大型トラックをドイツ・オランダで先行販売開始。', status: 'published', date: '2026/03/02', langs: ['日本語', 'English', 'Deutsch'], regions: ['eu'], categoryId: 'manufacturing',
-        body: '■ 製品概要\n・車名：Toyota H2 Truck\n・エンジン：3.0L 直6 水素燃焼エンジン\n・航続距離：約600km\n・積載量：最大25トン',
-        videos: [
-          { platform: 'youtube', title: 'Toyota H2 Truck - Hydrogen Powered Heavy Duty (DE)', url: 'https://youtube.com/watch?v=example6', views: 78000, date: '2026/03/02' },
-        ]},
-      { title: '月面探査車「LUNAR CRUISER」の最終試作機が完成、JAXAと共同で月面走行試験へ', summary: '2028年の月面ミッションに向け、与圧型月面探査車の最終プロトタイプが完成。', status: 'published', date: '2026/02/28', langs: ['日本語', 'English'], regions: ['na', 'eu', 'asia'], categoryId: 'it',
-        body: '■ LUNAR CRUISER概要\n・全長：6.0m × 全幅：5.2m × 全高：3.8m\n・乗員：2名（最大4名）\n・航続距離：10,000km以上\n・燃料電池 + 太陽光発電のハイブリッドシステム',
-        videos: [
-          { platform: 'youtube', title: 'LUNAR CRUISER 最終試作機完成｜JAXA×トヨタ記者会見', url: 'https://youtube.com/watch?v=example7', views: 890000, date: '2026/02/28' },
-          { platform: 'youtube', title: 'Inside the LUNAR CRUISER - Full Tour (EN)', url: 'https://youtube.com/watch?v=example7en', views: 2100000, date: '2026/03/01' },
-          { platform: 'tiktok', title: '月面を走るトヨタ車!? #LUNARCRUISER #宇宙', url: 'https://tiktok.com/@toyotajp/video/example7', views: 5400000, date: '2026/02/28' },
-          { platform: 'twitter', title: 'LUNAR CRUISER 試作機お披露目ダイジェスト', url: 'https://x.com/ToyotaMotorCorp/status/example7', views: 320000, date: '2026/02/28' },
-        ]},
-      { title: 'トヨタ・リサーチ・インスティテュート、大規模言語モデルを活用した車両設計AIを発表', summary: '自然言語で車両デザイン要件を入力するとAIが3Dモデルを自動生成。開発期間を60%短縮。', status: 'published', date: '2026/02/25', langs: ['日本語', 'English'], regions: ['na'], categoryId: 'it',
-        body: '■ 技術概要\n・自然言語による車両デザイン指示\n・AIが3Dモデルを10分以内に自動生成\n・空力シミュレーションも同時実行\n・開発期間を従来比60%短縮',
-        videos: [
-          { platform: 'youtube', title: 'TRI Design AI デモンストレーション', url: 'https://youtube.com/watch?v=example8', views: 210000, date: '2026/02/25' },
-        ]},
-      { title: 'トヨタファイナンシャルサービス、グリーンボンド2,000億円を発行', summary: 'EV・水素インフラ投資に充当。ESG格付けでAAA評価を維持。', status: 'draft', date: '2026/03/13', langs: ['日本語', 'English'], regions: ['na', 'eu'], categoryId: 'finance',
-        body: '■ 発行概要\n・発行額：2,000億円\n・年限：5年 / 10年の2本立て\n・用途：EV開発、水素ステーション整備、再生可能エネルギー設備',
-        videos: []},
-      { title: 'CES 2027出展内容を先行公開：空飛ぶクルマ「Toyota VTOL」のコンセプトモデル', summary: '電動垂直離着陸機の実機サイズモデルを初公開予定。都市間エアモビリティの実現に向けた構想を発表。', status: 'draft', date: '2026/03/13', langs: ['日本語', 'English', '中文'], regions: ['na', 'asia', 'cn'], categoryId: 'it',
-        body: '■ コンセプト概要\n・乗員：4名（パイロット含む）\n・航続距離：約150km\n・最高速度：250km/h\n・全電動 eVTOL',
-        videos: []},
-    ];
+    let myReleases = [];
 
     const langCode = (c) => ({ ja: '日本語', en: 'English', zh: '中文', ko: '한국어', de: 'Deutsch', fr: 'Français', es: 'Español' }[c] || c);
     function getCategoryById(id) { return CATEGORIES.find(c => c.id === id); }
@@ -1133,12 +1068,11 @@
       const fmtPeriod = (d) => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
       const periodStr = `${fmtPeriod(monthAgo)} - ${fmtPeriod(today)}`;
 
-      // GA数値の合計（実データがあればそれを使用、なければダミー）
+      // GA数値の合計（DBから取得した実データのみ使用）
       const totalPV = myReleases.reduce((sum, r) => sum + (r.ga_page_views || 0), 0);
       const totalSessions = myReleases.reduce((sum, r) => sum + (r.ga_sessions || 0), 0);
-      const hasGAData = myReleases.some(r => r.ga_page_views != null);
-      const pvDisplay = hasGAData ? totalPV.toLocaleString() : '23,238';
-      const sessionsDisplay = hasGAData ? totalSessions.toLocaleString() : '1,381';
+      const pvDisplay = totalPV.toLocaleString();
+      const sessionsDisplay = totalSessions.toLocaleString();
 
       const statusBadge = (s) => {
         if (s === 'published') return '<span class="text-[11px] px-2 py-0.5 rounded bg-green-700 text-white font-medium">配信済み</span>';
