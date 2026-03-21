@@ -31,12 +31,25 @@ export default async function handler(req, res) {
 
     const emailLower = email.toLowerCase().trim();
 
-    // Look up user
-    const { data: user, error: fetchErr } = await supabase
+    // Look up user — try new schema, fallback to old
+    let { data: user, error: fetchErr } = await supabase
       .from("users")
       .select("id, email, password_hash, name, belong_company, is_admin, email_verified")
       .eq("email", emailLower)
       .single();
+
+    // Fallback: old schema
+    if (fetchErr && fetchErr.message.includes("belong_company")) {
+      ({ data: user, error: fetchErr } = await supabase
+        .from("users")
+        .select("id, email, password_hash, name, company, role, email_verified")
+        .eq("email", emailLower)
+        .single());
+      if (user) {
+        user.belong_company = user.company;
+        user.is_admin = user.role === "admin" ? "yes" : "no";
+      }
+    }
 
     if (fetchErr || !user) {
       return res.status(401).json({ error: "メールアドレスまたはパスワードが正しくありません" });
