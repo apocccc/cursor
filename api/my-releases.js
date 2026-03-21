@@ -16,11 +16,17 @@ export default async function handler(req, res) {
 
   const isAdmin = user.is_admin === "yes";
 
-  // select * で全カラム取得（新旧スキーマ両対応）
-  let { data: releases, error } = await supabase
+  let query = supabase
     .from("press_releases")
     .select("*")
     .order("created_at", { ascending: false });
+
+  // Admin sees all, others see only their own
+  if (!isAdmin) {
+    query = query.eq("creator", user.id);
+  }
+
+  const { data: releases, error } = await query;
 
   if (error) {
     return res.status(500).json({ error: "プレスリリースの取得に失敗しました", detail: error.message });

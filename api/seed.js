@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import { supabase } from "./supabase.js";
 
 const SEED_USERS = [
-  { email: "client@apoc.co.jp", password: "client123", name: "鈴木 一郎", is_admin: "no", role: "client", company: "トヨタ自動車株式会社" },
-  { email: "translator@apoc.co.jp", password: "trans123", name: "田中 美咲", is_admin: "no", role: "translator", company: "" },
-  { email: "admin@apoc.co.jp", password: "admin123", name: "山田 太郎", is_admin: "yes", role: "admin", company: "株式会社APOC" },
+  { email: "client@apoc.co.jp", password: "client123", name: "鈴木 一郎", is_admin: "no" },
+  { email: "translator@apoc.co.jp", password: "trans123", name: "田中 美咲", is_admin: "no" },
+  { email: "admin@apoc.co.jp", password: "admin123", name: "山田 太郎", is_admin: "yes" },
 ];
 
 export default async function handler(req, res) {
@@ -26,8 +26,8 @@ export default async function handler(req, res) {
       );
       await supabase.from("users").delete().eq("email", u.email);
 
-      // Insert fresh — try new schema first, fallback to old
-      let { data, error } = await supabase.from("users").insert({
+      // Insert fresh
+      const { data, error } = await supabase.from("users").insert({
         id: crypto.randomUUID(),
         email: u.email,
         password_hash: passwordHash,
@@ -35,18 +35,6 @@ export default async function handler(req, res) {
         is_admin: u.is_admin,
         email_verified: true,
       }).select("id, email").single();
-
-      // Fallback: old schema (role/company columns)
-      if (error && error.message.includes("is_admin")) {
-        ({ data, error } = await supabase.from("users").insert({
-          email: u.email,
-          password_hash: passwordHash,
-          name: u.name,
-          role: u.role,
-          company: u.company,
-          email_verified: true,
-        }).select("id, email").single());
-      }
 
       if (error) {
         results.push({ email: u.email, status: "error", error: error.message });

@@ -31,25 +31,12 @@ export default async function handler(req, res) {
 
     const emailLower = email.toLowerCase().trim();
 
-    // Look up user — try new schema, fallback to old
-    let { data: user, error: fetchErr } = await supabase
+    // Look up user
+    const { data: user, error: fetchErr } = await supabase
       .from("users")
       .select("id, email, password_hash, name, belong_company, is_admin, email_verified")
       .eq("email", emailLower)
       .single();
-
-    // Fallback: old schema
-    if (fetchErr && fetchErr.message.includes("belong_company")) {
-      ({ data: user, error: fetchErr } = await supabase
-        .from("users")
-        .select("id, email, password_hash, name, company, role, email_verified")
-        .eq("email", emailLower)
-        .single());
-      if (user) {
-        user.belong_company = user.company;
-        user.is_admin = user.role === "admin" ? "yes" : "no";
-      }
-    }
 
     if (fetchErr || !user) {
       return res.status(401).json({ error: "メールアドレスまたはパスワードが正しくありません" });
@@ -72,15 +59,13 @@ export default async function handler(req, res) {
     const loginIp = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "";
     const loginBrowser = req.headers["user-agent"] || "";
 
-    const sessionRow = { user_id: user.id, token, expires_at: expiresAt };
-    // ip_address/user_agentカラムが存在する場合のみ保存
-    let { error: sessionErr } = await supabase.from("sessions").insert({
-      ...sessionRow, ip_address: loginIp, user_agent: loginBrowser,
+    const { error: sessionErr } = await supabase.from("sessions").insert({
+      user_id: user.id,
+      token,
+      expires_at: expiresAt,
+      ip_address: loginIp,
+      user_agent: loginBrowser,
     });
-    // カラム未追加の場合はフォールバック
-    if (sessionErr) {
-      ({ error: sessionErr } = await supabase.from("sessions").insert(sessionRow));
-    }
 
     if (sessionErr) {
       console.error("Session insert error:", sessionErr);
