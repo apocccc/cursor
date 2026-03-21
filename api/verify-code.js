@@ -63,6 +63,7 @@ export default async function handler(req, res) {
     const { data: newUser, error: insertErr } = await supabase
       .from("users")
       .insert({
+        id: crypto.randomUUID(),
         email: emailLower,
         password_hash: "",
         name: emailLower.split("@")[0],

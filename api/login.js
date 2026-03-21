@@ -59,13 +59,15 @@ export default async function handler(req, res) {
     const loginIp = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "";
     const loginBrowser = req.headers["user-agent"] || "";
 
-    const { error: sessionErr } = await supabase.from("sessions").insert({
-      user_id: user.id,
-      token,
-      expires_at: expiresAt,
-      ip_address: loginIp,
-      user_agent: loginBrowser,
+    const sessionRow = { user_id: user.id, token, expires_at: expiresAt };
+    // ip_address/user_agentカラムが存在する場合のみ保存
+    let { error: sessionErr } = await supabase.from("sessions").insert({
+      ...sessionRow, ip_address: loginIp, user_agent: loginBrowser,
     });
+    // カラム未追加の場合はフォールバック
+    if (sessionErr) {
+      ({ error: sessionErr } = await supabase.from("sessions").insert(sessionRow));
+    }
 
     if (sessionErr) {
       console.error("Session insert error:", sessionErr);

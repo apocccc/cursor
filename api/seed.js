@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { supabase } from "./supabase.js";
 
@@ -27,6 +28,7 @@ export default async function handler(req, res) {
 
       // Insert fresh
       const { data, error } = await supabase.from("users").insert({
+        id: crypto.randomUUID(),
         email: u.email,
         password_hash: passwordHash,
         name: u.name,
